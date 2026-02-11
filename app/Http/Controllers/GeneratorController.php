@@ -70,13 +70,14 @@ class GeneratorController extends Controller
 
             $response = $this->gemini->generateImage([
                 ['text' => $prompt],
-                ['text' => 'Design pattern to use for filling:'],
+                ['text' => 'DESIGN PATTERN (to replicate inside outlines):'],
                 ['inlineData' => ['mimeType' => 'image/png', 'data' => $this->loadBase64($designPath)]],
-                ['text' => 'Outline shape to fill with the pattern:'],
+                ['text' => 'OUTLINE BOUNDARIES (black lines show where to fill - fill INSIDE the black outlines ONLY):'],
                 ['inlineData' => ['mimeType' => 'image/png', 'data' => $this->loadBase64($outlinePath)]],
+                ['text' => 'Generate the result with pattern ONLY inside the outlined areas. Keep everything outside pure white.'],
             ], [
                 'responseModalities' => ['IMAGE'],
-                'temperature' => 0.4,
+                'temperature' => 0.3,
             ]);
 
             $imageBase64 = $this->gemini->extractInlineImageBase64($response);
@@ -223,23 +224,30 @@ class GeneratorController extends Controller
         $backgroundPath = $uploadsPath . DIRECTORY_SEPARATOR . 'background_fill.png';
         $this->images->processAndSaveImage($backgroundFile->get(), $backgroundFile->getClientOriginalName(), $backgroundPath);
 
-        $prompt = "ACT AS A MASTER GUNSMITH AND HAND-ENGRAVER. Your goal is to FILL the OUTLINE shapes with the provided BACKGROUND FILL image.\n\n" .
-            "CRITICAL COMPOSITION RULES:\n" .
-            "1. ABSOLUTE MASKING: Anything outside the outline must remain pure white.\n" .
-            "2. MULTIPLE/DISCONNECTED SHAPES: Fill each shape separately.\n" .
-            "3. FILL APPLICATION: Apply the background fill to the interior of each shape.\n" .
-            "4. NO DECORATIVE ELEMENTS beyond the background fill.\n\n" .
-            "CONSTRAINTS:\n- ZERO OUTSIDE BLEED\n- HOLE INTEGRITY\n- PERFECT CLIPPING";
+        $prompt = "ACT AS A MASTER GUNSMITH AND HAND-ENGRAVER creating precise fill patterns.\n\n" .
+            "TASK: Fill the INTERIOR areas enclosed by the black outline with the provided background fill pattern.\n\n" .
+            "CRITICAL MASKING RULES:\n" .
+            "1. STRICT CONTAINMENT: Fill ONLY the white interior areas INSIDE the black outline boundaries.\n" .
+            "2. PURE WHITE OUTSIDE: Everything outside the outlined shapes MUST remain completely white (#FFFFFF).\n" .
+            "3. PERFECT CLIPPING: Use the outline as a strict clipping mask.\n" .
+            "4. MULTIPLE SHAPES: Fill each separate enclosed shape independently.\n\n" .
+            "CONSTRAINTS:\n" .
+            "✓ ZERO bleed outside boundaries\n" .
+            "✓ Keep all exterior areas pure white\n" .
+            "✓ Fill interiors completely\n" .
+            "✓ Maintain clean edges\n\n" .
+            "The outline shows BOUNDARIES (black lines). Fill INSIDE only. Keep OUTSIDE white.";
 
         $response = $this->gemini->generateImage([
             ['text' => $prompt],
-            ['text' => 'Background fill image to use:'],
+            ['text' => 'BACKGROUND FILL PATTERN (to apply inside outlines):'],
             ['inlineData' => ['mimeType' => 'image/png', 'data' => $this->loadBase64($backgroundPath)]],
-            ['text' => 'Outline shape to fill:'],
+            ['text' => 'OUTLINE BOUNDARIES (black lines - fill INSIDE only):'],
             ['inlineData' => ['mimeType' => 'image/png', 'data' => $this->loadBase64($outlinePath)]],
+            ['text' => 'Generate result with fill ONLY inside outlined areas. Keep everything outside pure white.'],
         ], [
             'responseModalities' => ['IMAGE'],
-            'temperature' => 0.4,
+            'temperature' => 0.3,
         ]);
 
         $imageBase64 = $this->gemini->extractInlineImageBase64($response);
@@ -358,23 +366,29 @@ class GeneratorController extends Controller
 
     private function basePrompt(): string
     {
-        return "ACT AS A MASTER GUNSMITH AND HAND-ENGRAVER. Your goal is to INTELLIGENTLY ADAPT and REPLICATE the DESIGN image to fill ONLY inside the OUTLINE shapes.\n\n" .
-            "CRITICAL COMPOSITION RULES:\n" .
-            "1. ABSOLUTE MASKING: The outline defines the only allowed engraving area; outside must be pure white.\n" .
-            "2. MULTIPLE/DISCONNECTED SHAPES: Clone the full design into each separate shape.\n" .
-            "3. DENSE INTERIOR FILL: The pattern must cover the ENTIRE interior with rich, continuous scrollwork.\n" .
-            "4. NO FRAMES: Do NOT create a border-only frame or edge-only decoration.\n" .
-            "5. STYLE TRANSFER: Use the DESIGN image as a texture fill and repeat/flow it to cover all open space.\n\n" .
-            "STYLE & TECHNIQUE:\n" .
-            "- Pure black and white line work only (#000000 and #FFFFFF).\n" .
-            "- No gray gradients or shading.\n" .
-            "- Keep linework crisp and high-contrast.\n\n" .
-            "CONSTRAINTS:\n" .
-            "- ZERO OUTSIDE BLEED\n" .
-            "- HOLE INTEGRITY\n" .
-            "- SILHOUETTE DEFINITION: No outer border line.\n" .
-            "- FILL CONSISTENCY: Avoid large empty regions anywhere inside the outline.\n\n" .
-            "GOAL:\n" .
-            "Create a perfectly clipped engraving blueprint with dense interior coverage and zero content outside boundaries.";
+        return "ACT AS A MASTER GUNSMITH AND HAND-ENGRAVER creating precise ornamental fill patterns.\n\n" .
+            "TASK: Fill the INTERIOR areas enclosed by the black outline with the provided design pattern.\n\n" .
+            "CRITICAL MASKING RULES:\n" .
+            "1. STRICT CONTAINMENT: The black outline lines define boundaries. Fill ONLY the white interior areas INSIDE these black boundaries.\n" .
+            "2. PURE WHITE OUTSIDE: Everything outside the outlined shapes MUST remain completely white (#FFFFFF). ZERO content beyond boundaries.\n" .
+            "3. PERFECT CLIPPING: Use the outline as a strict clipping mask. The scrollwork pattern should ONLY appear within enclosed areas.\n" .
+            "4. RESPECT HOLES: If there are hollow areas or internal holes within shapes, keep them empty (white).\n" .
+            "5. MULTIPLE SHAPES: Fill each separate enclosed shape independently with the pattern.\n\n" .
+            "FILL TECHNIQUE:\n" .
+            "- Apply the design pattern to completely fill the interior of each outlined shape\n" .
+            "- Adapt and repeat the pattern to cover all interior space densely\n" .
+            "- NO border-only decoration - fill the ENTIRE interior area\n" .
+            "- Pattern should flow naturally and cover empty spaces\n\n" .
+            "STYLE REQUIREMENTS:\n" .
+            "- Pure black and white linework only (#000000 and #FFFFFF)\n" .
+            "- No gray gradients or anti-aliasing blur\n" .
+            "- Crisp, high-contrast engraving lines\n" .
+            "- Do NOT add extra border lines around the outline\n\n" .
+            "ABSOLUTE CONSTRAINTS:\n" .
+            "✓ ZERO bleed outside outlined boundaries\n" .
+            "✓ Keep all exterior areas pure white\n" .
+            "✓ Fill interiors completely with dense pattern\n" .
+            "✓ Maintain clean edges at boundaries\n\n" .
+            "Remember: The outline shows BOUNDARIES (black lines). Everything INSIDE these boundaries should be filled with pattern. Everything OUTSIDE must stay white.";
     }
 }
