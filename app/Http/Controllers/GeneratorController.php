@@ -92,16 +92,20 @@ class GeneratorController extends Controller
 
             $outputPath = $uploadsPath . DIRECTORY_SEPARATOR . $filename;
             file_put_contents($outputPath, base64_decode($imageBase64));
+            chmod($outputPath, 0644); // Ensure file is readable
             $this->images->postProcessFill($outputPath);
 
             $svgPath = $uploadsPath . DIRECTORY_SEPARATOR . $svgFilename;
             $this->images->convertPngToSvg($outputPath, $svgPath);
+            if (file_exists($svgPath)) {
+                chmod($svgPath, 0644); // Ensure SVG is readable
+            }
 
             return response()->json([
                 'success' => true,
                 'filename' => $filename,
-                'image_url' => Storage::disk('public')->url('uploads/' . $filename),
-                'svg_url' => Storage::disk('public')->url('uploads/' . $svgFilename),
+                'image_url' => url('uploads/' . $filename),
+                'svg_url' => url('uploads/' . $svgFilename),
             ]);
         } catch (\RuntimeException $e) {
             $errorMsg = $e->getMessage();
@@ -199,16 +203,20 @@ class GeneratorController extends Controller
             $svgFilename = str_replace('.png', '.svg', $filename);
             $outputPath = $uploadsPath . DIRECTORY_SEPARATOR . $filename;
             copy($outlinePath, $outputPath);
+            chmod($outputPath, 0644); // Ensure file is readable
             $this->images->postProcessFill($outputPath);
 
             $svgPath = $uploadsPath . DIRECTORY_SEPARATOR . $svgFilename;
             $this->images->convertPngToSvg($outputPath, $svgPath);
+            if (file_exists($svgPath)) {
+                chmod($svgPath, 0644); // Ensure SVG is readable
+            }
 
             return response()->json([
                 'success' => true,
                 'filename' => $filename,
-                'image_url' => Storage::disk('public')->url('uploads/' . $filename),
-                'svg_url' => Storage::disk('public')->url('uploads/' . $svgFilename),
+                'image_url' => url('uploads/' . $filename),
+                'svg_url' => url('uploads/' . $svgFilename),
             ]);
         }
 
@@ -246,22 +254,26 @@ class GeneratorController extends Controller
         $svgFilename = str_replace('.png', '.svg', $filename);
         $outputPath = $uploadsPath . DIRECTORY_SEPARATOR . $filename;
         file_put_contents($outputPath, base64_decode($imageBase64));
+        chmod($outputPath, 0644); // Ensure file is readable
         $this->images->postProcessFill($outputPath);
 
         $svgPath = $uploadsPath . DIRECTORY_SEPARATOR . $svgFilename;
         $this->images->convertPngToSvg($outputPath, $svgPath);
+        if (file_exists($svgPath)) {
+            chmod($svgPath, 0644); // Ensure SVG is readable
+        }
 
         return response()->json([
             'success' => true,
             'filename' => $filename,
-            'image_url' => Storage::disk('public')->url('uploads/' . $filename),
-            'svg_url' => Storage::disk('public')->url('uploads/' . $svgFilename),
+            'image_url' => url('uploads/' . $filename),
+            'svg_url' => url('uploads/' . $svgFilename),
         ]);
     }
 
     public function download(string $filename)
     {
-        $path = Storage::disk('public')->path('uploads/' . $filename);
+        $path = public_path('uploads/' . $filename);
 
         if (!file_exists($path) && str_ends_with($filename, '.svg')) {
             $pngPath = preg_replace('/\.svg$/i', '.png', $path);
@@ -281,7 +293,7 @@ class GeneratorController extends Controller
 
     public function imageBase64(string $filename)
     {
-        $path = Storage::disk('public')->path('uploads/' . $filename);
+        $path = public_path('uploads/' . $filename);
         if (!file_exists($path)) {
             return response()->json(['success' => false, 'error' => 'File not found'], 404);
         }

@@ -9,13 +9,13 @@ class ImageProcessingService
 {
     public function ensureUploadsDirectory(): string
     {
-        $disk = Storage::disk('public');
-        $relative = 'uploads';
-        if (!$disk->exists($relative)) {
-            $disk->makeDirectory($relative);
+        $uploadsPath = public_path('uploads');
+        
+        if (!is_dir($uploadsPath)) {
+            mkdir($uploadsPath, 0755, true);
         }
 
-        return $disk->path($relative);
+        return $uploadsPath;
     }
 
     public function processAndSaveImage(string $fileBytes, string $filename, string $targetPath, int $maxLongSide = 1500): void
@@ -243,6 +243,9 @@ class ImageProcessingService
         if (file_put_contents($targetPath, $bytes) === false) {
             throw new \RuntimeException('Failed to write uploaded file.');
         }
+        
+        // Ensure file is readable by web server
+        chmod($targetPath, 0644);
     }
 
     private function magickBinary(): string
