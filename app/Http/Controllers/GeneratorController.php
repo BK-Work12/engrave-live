@@ -310,6 +310,10 @@ class GeneratorController extends Controller
 
     private function getBlackPixelPercentage(string $path): float
     {
+        if (!function_exists('imagecreatefromstring')) {
+            return $this->images->getBlackPixelPercentage($path);
+        }
+
         $image = imagecreatefromstring(file_get_contents($path));
         if (!$image) {
             return 0.0;

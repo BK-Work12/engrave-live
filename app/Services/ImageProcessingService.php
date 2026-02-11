@@ -186,6 +186,24 @@ class ImageProcessingService
         return base64_encode($svg);
     }
 
+    public function getBlackPixelPercentage(string $path): float
+    {
+        $cmd = [
+            $this->magickBinary(),
+            $path,
+            '-alpha', 'off',
+            '-colorspace', 'Gray',
+            '-format', '%[fx:mean]',
+            'info:',
+        ];
+
+        $output = $this->runProcessWithOutput($cmd, 'Image stats failed');
+        $mean = is_numeric($output) ? (float) $output : 0.0;
+        $mean = max(0.0, min(1.0, $mean));
+
+        return (1.0 - $mean) * 100.0;
+    }
+
     private function convertSvgBytesToPng(string $fileBytes, string $targetPath, int $maxLongSide): void
     {
         $tmpSvg = tempnam(sys_get_temp_dir(), 'svg_');
@@ -252,5 +270,17 @@ class ImageProcessingService
         }
 
         return true;
+    }
+
+    private function runProcessWithOutput(array $command, string $errorMessage): string
+    {
+        $process = new Process($command);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new \RuntimeException($errorMessage . ': ' . $process->getErrorOutput());
+        }
+
+        return trim($process->getOutput());
     }
 }
