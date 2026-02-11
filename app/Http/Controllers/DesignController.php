@@ -11,25 +11,61 @@ class DesignController extends Controller
 {
     public function store(Request $request)
     {
-        $request->validate([
-            'image' => 'required|file|mimes:jpeg,png,svg|max:10240', // 10MB max
-        ]);
+        try {
+            // Validate input
+            $request->validate([
+                'image' => 'required|file|mimes:jpeg,png,svg|max:10240', // 10MB max
+            ]);
 
-        $user = $request->user();
+            // Check authentication
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Unauthorized: User not authenticated'
+                ], 401);
+            }
 
-        $path = $request->file('image')->store('designs', 'public');
+            // Store the file
+            $path = $request->file('image')->store('designs', 'public');
+            if (!$path) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Failed to store image file'
+                ], 500);
+            }
 
-        $design = Design::create([
-            'user_id' => $user->id,
-            'name' => $request->file('image')->getClientOriginalName(),
-            'file_path' => '/storage/' . $path,
-            'status' => 'uploaded'
-        ]);
+            // Create design record
+            $design = Design::create([
+                'user_id' => $user->id,
+                'name' => $request->file('image')->getClientOriginalName(),
+                'file_path' => '/storage/' . $path,
+                'status' => 'uploaded'
+            ]);
 
-        return response()->json([
-            'message' => 'Image uploaded successfully',
-            'design' => $design
-        ]);
+            if (!$design) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Failed to create design record'
+                ], 500);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Image uploaded successfully',
+                'design' => $design
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Validation failed: ' . implode(', ', $e->errors()['image'] ?? ['Unknown validation error'])
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'The design failed to upload: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function deductCredit(Request $request)

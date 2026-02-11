@@ -202,24 +202,38 @@ export default function Generator() {
                 throw new Error(errorMessage);
             }
 
-            // Handle HTML response
-            const htmlText = await response.text();
+            // Try to parse as JSON first (new API format)
+            let responseData;
+            const contentType = response.headers.get('content-type');
             let imageUrl = '';
             let filename = '';
 
-            const imgMatch = htmlText.match(/<img[^>]+src=["']([^"']+)["']/i);
-            if (imgMatch && imgMatch[1]) {
-                imageUrl = imgMatch[1];
-                const urlParts = imageUrl.split('/');
-                filename = urlParts[urlParts.length - 1];
+            if (contentType && contentType.includes('application/json')) {
+                responseData = await response.json();
+                if (responseData.success && responseData.image_url) {
+                    imageUrl = responseData.image_url;
+                    filename = responseData.filename || '';
+                } else if (!responseData.success) {
+                    throw new Error(responseData.error || 'Generation failed');
+                }
             } else {
-                const resultUrlMatch = htmlText.match(/result_url\s*=\s*["']([^"']+)["']/i);
-                if (resultUrlMatch && resultUrlMatch[1]) {
-                    imageUrl = resultUrlMatch[1];
+                // Handle HTML response (legacy format)
+                const htmlText = await response.text();
+
+                const imgMatch = htmlText.match(/<img[^>]+src=["']([^"']+)["']/i);
+                if (imgMatch && imgMatch[1]) {
+                    imageUrl = imgMatch[1];
                     const urlParts = imageUrl.split('/');
                     filename = urlParts[urlParts.length - 1];
                 } else {
-                    throw new Error('Could not extract image URL from API response');
+                    const resultUrlMatch = htmlText.match(/result_url\s*=\s*["']([^"']+)["']/i);
+                    if (resultUrlMatch && resultUrlMatch[1]) {
+                        imageUrl = resultUrlMatch[1];
+                        const urlParts = imageUrl.split('/');
+                        filename = urlParts[urlParts.length - 1];
+                    } else {
+                        throw new Error('Could not extract image URL from API response');
+                    }
                 }
             }
 

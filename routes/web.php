@@ -26,10 +26,9 @@ Route::post('/login', [App\Http\Controllers\AuthController::class, 'login'])->na
 Route::post('/signup', [App\Http\Controllers\AuthController::class, 'register'])->name('signup.post');
 Route::post('/logout', [App\Http\Controllers\AuthController::class, 'logout'])->name('logout');
 
-Route::post('/designs/upload', [App\Http\Controllers\DesignController::class, 'store'])->name('designs.store');
-Route::put('/designs/{design}', [App\Http\Controllers\DesignController::class, 'update'])->name('designs.update');
-
 Route::middleware('auth')->group(function () {
+    Route::post('/designs/upload', [App\Http\Controllers\DesignController::class, 'store'])->name('designs.store');
+    Route::put('/designs/{design}', [App\Http\Controllers\DesignController::class, 'update'])->name('designs.update');
     Route::get('/dashboard', fn () => Inertia::render('Dashboard'))->name('dashboard');
     Route::post('/checkout', [App\Http\Controllers\PaymentController::class, 'checkout'])->name('checkout');
     Route::get('/checkout/success', [App\Http\Controllers\PaymentController::class, 'success'])->name('checkout.success');

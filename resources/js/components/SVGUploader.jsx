@@ -41,11 +41,37 @@ export default function DesignUploader({
             const response = await axios.post('/designs/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-            if (onDesignUploaded) {
-                onDesignUploaded(response.data.design);
+
+            // Check if response indicates success
+            if (response.data.success === false) {
+                console.error('Upload failed:', response.data.error);
+                alert(`Upload error: ${response.data.error}`);
+                return;
+            }
+
+            if (response.status === 200 || response.status === 201) {
+                if (onDesignUploaded && response.data.design) {
+                    onDesignUploaded(response.data.design);
+                }
             }
         } catch (error) {
             console.error('Upload failed:', error);
+            
+            // Extract error message from response if available
+            let errorMessage = 'Failed to upload design';
+            if (error.response) {
+                if (error.response.status === 401) {
+                    errorMessage = 'You must be logged in to upload designs';
+                } else if (error.response.data?.error) {
+                    errorMessage = error.response.data.error;
+                } else if (error.response.status) {
+                    errorMessage = `Server error: ${error.response.status} ${error.response.statusText}`;
+                }
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            alert(errorMessage);
         }
     };
 
