@@ -1,0 +1,322 @@
+import React, { useRef, useState } from "react";
+import { router } from "@inertiajs/react";
+import PrimaryButton from "../components/PrimaryButton";
+
+export default function SeamlessPatternCreator() {
+    const outlineInputRef = useRef(null);
+    const patternInputRef = useRef(null);
+    const [outlineImage, setOutlineImage] = useState(null);
+    const [patternImage, setPatternImage] = useState(null);
+    const [outlineFile, setOutlineFile] = useState(null);
+    const [patternFile, setPatternFile] = useState(null);
+    const [generatedImage, setGeneratedImage] = useState(null);
+    const [generatedImageFilename, setGeneratedImageFilename] = useState(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [borderOffset, setBorderOffset] = useState(0);
+
+    const handleOutlineUpload = (file) => {
+        if (!file) return;
+        setOutlineFile(file);
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            setOutlineImage(e.target.result);
+        };
+    };
+
+    const handlePatternUpload = (file) => {
+        if (!file) return;
+        setPatternFile(file);
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            setPatternImage(e.target.result);
+        };
+    };
+
+    const handleReset = () => {
+        // Reset all state
+        setOutlineImage(null);
+        setPatternImage(null);
+        setOutlineFile(null);
+        setPatternFile(null);
+        setGeneratedImage(null);
+        setGeneratedImageFilename(null);
+        setBorderOffset(0);
+
+        // Reset file inputs
+        if (outlineInputRef.current) {
+            outlineInputRef.current.value = '';
+        }
+        if (patternInputRef.current) {
+            patternInputRef.current.value = '';
+        }
+    };
+
+    const handleGenerate = async () => {
+        if (!outlineFile || !patternFile) {
+            alert("Please upload both outline image and pattern image");
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            // FastAPI endpoint integration
+            const formData = new FormData();
+            formData.append('outline', outlineFile);
+            formData.append('design', patternFile);
+            // formData.append('border_offset', borderOffset.toString());
+
+            const API_ENDPOINT = '/py-api/';
+
+            const response = await fetch(API_ENDPOINT, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                let errorMessage = `Generation failed: ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData && errorData.error) {
+                        errorMessage = errorData.error;
+                    }
+                } catch (e) {
+                    // Fallback to default message if JSON parsing fails
+                }
+                throw new Error(errorMessage);
+            }
+
+            // Extract image URL from response (which could be HTML or JSON)
+            const contentType = response.headers.get("content-type");
+            let imageUrl = '';
+            let filename = '';
+
+            if (contentType && contentType.includes("application/json")) {
+                const data = await response.json();
+                if (data.success && data.image_url) {
+                    imageUrl = data.image_url;
+                    filename = data.filename;
+                } else {
+                    throw new Error(data.error || 'Failed to generate image');
+                }
+            } else {
+                // Parse HTML response to extract image URL
+                const htmlText = await response.text();
+                const imgMatch = htmlText.match(/<img[^>]+src=["']([^"']+)["']/i);
+                if (imgMatch && imgMatch[1]) {
+                    imageUrl = imgMatch[1];
+                    const urlParts = imageUrl.split('/');
+                    filename = urlParts[urlParts.length - 1];
+                } else {
+                    const resultUrlMatch = htmlText.match(/result_url\s*=\s*["']([^"']+)["']/i);
+                    if (resultUrlMatch && resultUrlMatch[1]) {
+                        imageUrl = resultUrlMatch[1];
+                        const urlParts = imageUrl.split('/');
+                        filename = urlParts[urlParts.length - 1];
+                    } else {
+                        throw new Error('Could not extract image URL from API response');
+                    }
+                }
+            }
+
+            // If it's a relative URL, make it absolute
+            if (imageUrl.startsWith('/static/')) {
+                imageUrl = `/py-api${imageUrl}`;
+            } else if (imageUrl.startsWith('static/')) {
+                imageUrl = `/py-api/${imageUrl}`;
+            }
+
+            if (imageUrl) {
+                setGeneratedImage(imageUrl);
+                setGeneratedImageFilename(filename);
+            }
+        } catch (error) {
+            console.error("Generation error:", error);
+            alert(`An error occurred during generation: ${error.message}. Please try again.`);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    return (
+        <>
+            <div className="container flex flex-col justify-center items-center mx-auto mt-12 mb-15 px-4">
+                <div className="w-full max-w-4xl">
+                    {/* Two Image Inputs */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        {/* Outline Image Input */}
+                        <div className="bg-[#171616] rounded-[30px] p-6">
+                            <h3 className="text-lg text-white font-semibold mb-4 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                                Outline Image (Shape to fill):
+                            </h3>
+                            <input
+                                type="file"
+                                ref={outlineInputRef}
+                                className="hidden"
+                                accept="image/png,image/jpeg,image/svg+xml"
+                                onChange={(e) => handleOutlineUpload(e.target.files?.[0])}
+                            />
+                            {outlineImage ? (
+                                <div className="relative bg-white rounded-xl overflow-hidden">
+                                    <img src={outlineImage} alt="Outline" className="w-full h-auto rounded-xl border border-[#616161] object-contain" />
+                                    <button
+                                        onClick={() => outlineInputRef.current?.click()}
+                                        className="absolute top-2 right-2 bg-[#2F2E2E] hover:bg-[#3F3E3E] text-white px-3 py-1 rounded-lg text-sm"
+                                    >
+                                        Replace
+                                    </button>
+                                </div>
+                            ) : (
+                                <div
+                                    onClick={() => outlineInputRef.current?.click()}
+                                    className="border border-dashed border-[#616161] rounded-xl p-8 text-center cursor-pointer hover:border-white transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-[#616161]">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="17 8 12 3 7 8" />
+                                        <line x1="12" y1="3" x2="12" y2="15" />
+                                    </svg>
+                                    <p className="text-sm text-[#808080] mt-4">Choose File</p>
+                                    <p className="text-xs text-[#808080] mt-2">No file chosen</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Pattern Image Input */}
+                        <div className="bg-[#171616] rounded-[30px] p-6">
+                            <h3 className="text-lg text-white font-semibold mb-4 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                                Design Image (Pattern to use):
+                            </h3>
+                            <input
+                                type="file"
+                                ref={patternInputRef}
+                                className="hidden"
+                                accept="image/png,image/jpeg,image/svg+xml"
+                                onChange={(e) => handlePatternUpload(e.target.files?.[0])}
+                            />
+                            {patternImage ? (
+                                <div className="relative">
+                                    <img src={patternImage} alt="Pattern" className="w-full h-auto rounded-xl border border-[#616161]" />
+                                    <button
+                                        onClick={() => patternInputRef.current?.click()}
+                                        className="absolute top-2 right-2 bg-[#2F2E2E] hover:bg-[#3F3E3E] text-white px-3 py-1 rounded-lg text-sm"
+                                    >
+                                        Replace
+                                    </button>
+                                </div>
+                            ) : (
+                                <div
+                                    onClick={() => patternInputRef.current?.click()}
+                                    className="border border-dashed border-[#616161] rounded-xl p-8 text-center cursor-pointer hover:border-white transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-[#616161]">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="17 8 12 3 7 8" />
+                                        <line x1="12" y1="3" x2="12" y2="15" />
+                                    </svg>
+                                    <p className="text-sm text-[#808080] mt-4">Choose File</p>
+                                    <p className="text-xs text-[#808080] mt-2">No file chosen</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    {/* Border Offset Slider - COMMENTED OUT
+                    <div className="bg-[#171616] rounded-[30px] p-6 mb-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg text-white font-semibold flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                    <line x1="9" y1="3" x2="9" y2="21" />
+                                </svg>
+                                Border Offset (Safe Zone):
+                            </h3>
+                            <span className="text-[#808080] font-mono bg-[#2F2E2E] px-3 py-1 rounded-lg border border-[#3F3E3E]">
+                                {borderOffset} mm
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <span className="text-xs text-[#808080]">0mm</span>
+                            <input
+                                type="range"
+                                min="0"
+                                max="5"
+                                step="0.1"
+                                value={borderOffset}
+                                onChange={(e) => setBorderOffset(parseFloat(e.target.value))}
+                                className="flex-grow h-2 bg-[#2F2E2E] rounded-lg appearance-none cursor-pointer accent-[#6366f1]"
+                            />
+                            <span className="text-xs text-[#808080]">5mm</span>
+                        </div>
+                        <p className="text-xs text-[#616161] mt-2 italic">
+                            * Shrinks the fill area to create a clean border inside the lines.
+                        </p>
+                    </div>
+                    */}
+
+                    {/* Generate Button */}
+                    <div className="flex justify-center mb-6">
+                        <PrimaryButton
+                            text={isGenerating ? "Generating..." : "Generate Ornamental Design"}
+                            onClick={handleGenerate}
+                            disabled={!outlineImage || !patternImage || isGenerating}
+                            className="px-8 py-4 text-lg"
+                        />
+                    </div>
+
+                    {/* Output Display */}
+                    <div className="bg-[#171616] rounded-[30px] p-6">
+                        <h3 className="text-lg text-white font-semibold mb-4 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                            </svg>
+                            Generated Images
+                        </h3>
+                        {generatedImage ? (
+                            <div className="relative">
+                                <img
+                                    src={generatedImage}
+                                    alt="Generated Design"
+                                    className="w-full h-auto rounded-xl border border-[#616161] bg-white"
+                                />
+                                <div className="mt-4 flex justify-center gap-4 flex-wrap">
+                                    <PrimaryButton
+                                        text="Generate Again"
+                                        onClick={handleReset}
+                                        className="px-6"
+                                    />
+                                    <PrimaryButton
+                                        text="Generate Outline Design"
+                                        onClick={() => {
+                                            if (generatedImageFilename) {
+                                                // Navigate to outline generator with filename - backend will fetch it
+                                                router.visit(`/outline-generator?external_image=${generatedImageFilename}&backend=/py-api`);
+                                            } else {
+                                                alert('Image not ready. Please wait for generation to complete.');
+                                            }
+                                        }}
+                                        className="px-6"
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="border border-dashed border-[#616161] rounded-xl p-12 text-center">
+                                <p className="text-sm text-[#808080]">Your generated design will appear here</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </>
+    )
+}

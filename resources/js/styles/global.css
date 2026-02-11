@@ -1,0 +1,146 @@
+.main-head {
+    font-size: 72px;
+    font-weight: 700;
+    line-height: 90px;
+    color: #F5F5FF;
+}
+
+.main-p {
+    font-size: 24px;
+    color: #D6D6D6;
+}
+
+.secondary-btn {
+    background-color: #F5F5FF;
+    background-image: linear-gradient(90deg, #5F34FF 0%, #C459C6 103.19%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    /* required for most browsers */
+    color: transparent;
+}
+
+p {
+    color: #D6D6D6;
+}
+
+.sub-head {
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 44px;
+}
+
+.card-head {
+    font-size: 30px;
+    color: #FEFEFE;
+    font-weight: 600;
+}
+
+input::placeholder {
+    font-size: 18px;
+    color: #808080;
+}
+
+.label-fld {
+    font-size: 12px;
+    color: #FEFEFE;
+}
+
+.empty-box {
+    width: 50px;
+    height: 45px;
+    border: 1px solid #808080;
+    border-radius: 4px;
+}
+
+.input-fld {
+    border: 1px solid #808080;
+    border-radius: 4px;
+    width: 100%;
+    padding-block: 13.5px;
+    padding-inline: 10px;
+
+}
+
+.container {
+    max-width: 1280px;
+}
+
+.gradient-text {
+    background: linear-gradient(90deg, #5F34FF 0%, #C459C6 103.19%);
+    background-clip: text;
+    color: transparent;
+
+}
+
+.noise-layer {
+    position: absolute;
+    inset: 0;
+    background-image: url("/noise.png");
+    background-repeat: repeat;
+    opacity: 0.03;
+    /* ≈ 3% like your screenshot */
+    pointer-events: none;
+}
+
+details::marker {
+    display: none;
+}
+
+.pricingCard:hover {
+    background: linear-gradient(90deg, #5F34FF 0%, #C459C6 103.19%);
+    color: #FFFFFF;
+}
+
+/* Scroll container class */
+.custom-scroll {
+    scrollbar-width: thin;
+    /* Firefox */
+    scrollbar-color: #5F34FF transparent;
+}
+
+/* Chrome, Edge, Safari */
+.custom-scroll::-webkit-scrollbar {
+    width: 4px;
+    /* ✅ width */
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+    min-height: 166px;
+    /* ✅ closest possible */
+    border-radius: 34px;
+    /* ✅ radius */
+    background: linear-gradient(90deg,
+            #5F34FF 0%,
+            #C459C6 103.19%);
+}
+
+select::marker {
+    display: none;
+}
+
+option {
+    background-color: #171616;
+
+}
+
+
+
+/* globals.css or tailwind.css */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.Navlink:hover {
+    background: linear-gradient(90deg, #5F34FF 0%, #C459C6 103.19%);
+    background-clip: text;
+    color: transparent;
+}

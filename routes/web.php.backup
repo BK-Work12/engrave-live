@@ -1,0 +1,40 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+
+Route::get('/', fn () => Inertia::render('Home'));
+Route::get('/create', fn () => Inertia::render('Create'));
+Route::get('/style-examples', fn () => Inertia::render('StyleExamples'));
+Route::get('/how-it-works', fn () => Inertia::render('HowItWorks'));
+Route::get('/pricing', fn () => Inertia::render('Pricing'));
+Route::get('/faq', fn () => Inertia::render('FAQ'));
+
+Route::get('/login', fn () => Inertia::render('Login'))->name('login');
+Route::get('/signup', fn () => Inertia::render('SignUp'));
+Route::get('/forgot-password', fn () => Inertia::render('Forget'))->name('password.request');
+Route::post('/forgot-password', [App\Http\Controllers\PasswordResetController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('/reset-password/{token}', function (string $token) {
+    return Inertia::render('UpdatePassword', ['token' => $token, 'email' => request()->email]);
+})->name('password.reset');
+Route::post('/reset-password', [App\Http\Controllers\PasswordResetController::class, 'resetPassword'])->name('password.update');
+
+Route::get('/verify', fn () => Inertia::render('Verify'));
+
+Route::post('/login', [App\Http\Controllers\AuthController::class, 'login'])->name('login.post');
+Route::post('/signup', [App\Http\Controllers\AuthController::class, 'register'])->name('signup.post');
+Route::post('/logout', [App\Http\Controllers\AuthController::class, 'logout'])->name('logout');
+
+Route::post('/designs/upload', [App\Http\Controllers\DesignController::class, 'store'])->name('designs.store');
+Route::put('/designs/{design}', [App\Http\Controllers\DesignController::class, 'update'])->name('designs.update');
+
+Route::middleware('auth')->group(function () {
+    Route::post('/checkout', [App\Http\Controllers\PaymentController::class, 'checkout'])->name('checkout');
+    Route::get('/checkout/success', [App\Http\Controllers\PaymentController::class, 'success'])->name('checkout.success');
+    Route::post('/credits/deduct', [App\Http\Controllers\DesignController::class, 'deductCredit'])->name('credits.deduct');
+});
+
+Route::get('/ai-design-generator', fn () => Inertia::render('AIDesignGenerator'));
+Route::get('/seamless-patterns', fn () => Inertia::render('SeamlessPatternCreator'));
+Route::get('/svg-tracing', fn () => Inertia::render('SVGTracingTool'));
+Route::get('/outline-generator', fn () => Inertia::render('OutlineGenerator'));
