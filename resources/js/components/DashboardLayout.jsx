@@ -54,10 +54,6 @@ export default function DashboardLayout() {
         }
     ];
 
-    const isActive = (id) => {
-        return selectedFeature === id ? "sidebar-link active" : "sidebar-link";
-    };
-
     const allItems = menuItems.flatMap(m => m.items);
     const selectedItem = allItems.find(item => item.id === selectedFeature);
     const SelectedComponent = selectedItem?.component;
@@ -172,19 +168,19 @@ export default function DashboardLayout() {
             {/* Sidebar */}
             <div
                 className={`${
-                    sidebarOpen ? "w-64" : "w-20"
-                } bg-[#0f1537] border-r border-[#1a2052] transition-all duration-300 ease-in-out overflow-y-auto flex flex-col`}
+                    sidebarOpen ? "w-72" : "w-24"
+                } bg-gradient-to-b from-[#0f1537] to-[#0a0e27] border-r border-[#2a3052] transition-all duration-300 ease-in-out overflow-y-auto flex flex-col`}
             >
                 {/* Logo Section */}
-                <div className="p-4 border-b border-[#1a2052] flex items-center justify-between flex-shrink-0">
+                <div className="p-5 border-b border-[#2a3052] flex items-center justify-between flex-shrink-0">
                     <button
                         onClick={() => setSelectedFeature("dashboard")}
                         className="logo cursor-pointer flex-shrink-0 hover:opacity-80 transition"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            width={sidebarOpen ? 32 : 24}
-                            height={sidebarOpen ? 32 : 24}
+                            width={sidebarOpen ? 36 : 28}
+                            height={sidebarOpen ? 36 : 28}
                             viewBox="0 0 40 39"
                             fill="none"
                         >
@@ -200,10 +196,10 @@ export default function DashboardLayout() {
                     {sidebarOpen && (
                         <button
                             onClick={() => setSidebarOpen(false)}
-                            className="p-1 hover:bg-[#1a2052] rounded transition"
+                            className="p-2 hover:bg-[#1a2052] rounded-lg transition"
                             title="Collapse sidebar"
                         >
-                            <svg className="w-5 h-5 text-[#D6D6D6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 text-[#9CA3AF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
@@ -211,24 +207,37 @@ export default function DashboardLayout() {
                 </div>
 
                 {/* Menu Items */}
-                <nav className="p-4 space-y-6 flex-1 overflow-y-auto">
+                <nav className="flex-1 overflow-y-auto px-3 py-6">
                     {menuItems.map((menu, idx) => (
-                        <div key={idx}>
+                        <div key={idx} className={idx > 0 ? "mt-2" : ""}>
                             {sidebarOpen && (
-                                <h3 className="text-xs font-semibold text-[#6B7280] uppercase tracking-widest mb-3 px-3">
-                                    {menu.category}
-                                </h3>
+                                <div className="flex items-center gap-2 px-3 py-2 mb-3">
+                                    <div className="flex-1 h-px bg-gradient-to-r from-[#2a3052] to-transparent"></div>
+                                    <h3 className="text-xs font-bold text-[#4B5563] uppercase tracking-wider truncate">
+                                        {menu.category === "Creation Tools" && "✨ Create"}
+                                        {menu.category === "Pattern Management" && "📦 Manage"}
+                                        {menu.category === "Learn & Support" && "📚 Learn"}
+                                    </h3>
+                                </div>
                             )}
-                            <div className="space-y-1">
+                            <div className={sidebarOpen ? "space-y-2" : "space-y-1"}>
                                 {menu.items.map((item) => (
                                     <button
                                         key={item.id}
                                         onClick={() => setSelectedFeature(item.id)}
-                                        className={isActive(item.id)}
+                                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                                            selectedFeature === item.id
+                                                ? "bg-gradient-to-r from-blue-600/30 to-purple-600/20 text-white border border-blue-500/50 shadow-lg shadow-blue-500/20"
+                                                : "text-[#9CA3AF] hover:text-white hover:bg-[#1a2052] border border-transparent"
+                                        }`}
                                         title={item.name}
                                     >
-                                        <span className="text-lg flex-shrink-0">{item.icon}</span>
-                                        {sidebarOpen && <span className="truncate">{item.name}</span>}
+                                        <span className={`text-xl flex-shrink-0 transition-transform ${selectedFeature === item.id ? "scale-110" : ""}`}>
+                                            {item.icon}
+                                        </span>
+                                        {sidebarOpen && (
+                                            <span className="text-sm font-medium truncate">{item.name}</span>
+                                        )}
                                     </button>
                                 ))}
                             </div>
@@ -236,14 +245,29 @@ export default function DashboardLayout() {
                     ))}
                 </nav>
 
+                {/* User Profile Section */}
+                {sidebarOpen && (
+                    <div className="border-t border-[#2a3052] p-4 mt-auto bg-gradient-to-b from-transparent to-[#1a2052]/30">
+                        <div className="flex items-center gap-3 px-2 py-3">
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                                <span className="text-white font-bold text-sm">{user?.name?.charAt(0).toUpperCase()}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
+                                <p className="text-xs text-[#9CA3AF] truncate">{user?.email}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Expand Button */}
                 {!sidebarOpen && (
                     <button
                         onClick={() => setSidebarOpen(true)}
-                        className="w-full p-4 hover:bg-[#1a2052] transition border-t border-[#1a2052]"
+                        className="w-full p-4 hover:bg-[#1a2052] transition border-t border-[#2a3052]"
                         title="Expand sidebar"
                     >
-                        <svg className="w-5 h-5 text-[#D6D6D6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[#9CA3AF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                     </button>

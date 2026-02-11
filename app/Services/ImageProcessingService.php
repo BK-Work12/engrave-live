@@ -73,7 +73,6 @@ class ImageProcessingService
             '-colorspace', 'Gray',
             '-threshold', '50%',
             '-morphology', 'Dilate', $kernel,
-            '-interpolate', 'None',    // Pixel-perfect dilation
             '+repage',                 // Reset virtual canvas
             '-depth', '8',             // 8-bit output
             $path,
