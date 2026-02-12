@@ -48,10 +48,11 @@ class GeneratorController extends Controller
             }
             $designDensity = $this->getBlackPixelPercentage($designPath);
 
-            if ($outlineDensity > 20.0) {
+            // Relaxed validation - simply check that images aren't completely empty
+            if ($outlineDensity < 1.0) {
                 return response()->json([
                     'success' => false,
-                    'error' => sprintf('❌ OUTLINE IMAGE ERROR (Density: %.2f%%): The outline appears to be a complex pattern/design instead of an empty vector/silhouette. Per EngraveFill Pro guidelines, outline images should be simple, closed black silhouettes on white backgrounds. Complex multi-part shapes should be separated and uploaded individually.', $outlineDensity),
+                    'error' => '❌ OUTLINE IMAGE ERROR: The outline image appears to be completely empty (white). Please provide an outline with visible shapes.',
                 ], 400);
             }
 
@@ -344,8 +345,9 @@ class GeneratorController extends Controller
         $blackCount = 0;
         $total = 0;
 
-        for ($y = 0; $y < $height; $y += 5) {
-            for ($x = 0; $x < $width; $x += 5) {
+        // Use stride of 2 instead of 5 to detect thin lines better
+        for ($y = 0; $y < $height; $y += 2) {
+            for ($x = 0; $x < $width; $x += 2) {
                 $rgb = imagecolorat($image, $x, $y);
                 $alpha = ($rgb >> 24) & 0x7F;
                 $r = ($rgb >> 16) & 0xFF;
@@ -367,87 +369,62 @@ class GeneratorController extends Controller
     private function basePrompt(): string
     {
         return "SYSTEM ROLE:
-Act as a precision engraving compositor. Prioritize geometric accuracy and fabrication readiness over artistic interpretation.
+You are a precise bitmap compositor creating laser-engraving artwork. Your output must be pixel-perfect and fabrication-ready.
 
 INPUT:
-Two images are provided:
+• Outline Image: Contains BLACK outline shapes on WHITE background. These are HARD CLIPPING MASKS.
+• Pattern Image: Contains the decorative scrollwork pattern to tile inside the selected shape.
 
-• Outline Image — contains one or more black outline shapes that define fill boundaries.
-• Pattern Image — a high-detail acanthus scrollwork design used as the fill texture.
+CRITICAL CLIPPING MECHANISM:
+The black outline acts as a BINARY MASK:
+- INSIDE the black outline: Fill with the pattern
+- OUTSIDE the black outline: Must be pure white (#FFFFFF, RGB 255,255,255)
+- ON the black outline: Keep the original black line unchanged
 
-PRIMARY OBJECTIVE:
-Detect the RIGHTMOST enclosed outline shape in the Outline Image and populate ONLY its interior using the scrollwork pattern.
+SHAPE SELECTION:
+1. Identify all separate enclosed shapes in the Outline Image
+2. Fill EVERY enclosed shape completely with the pattern
+3. Do not leave any shapes empty
 
-HARD MASK RULE — HIGHEST PRIORITY:
-Treat every black outline as a HARD CLIPPING MASK.
+PATTERN FILLING PROCESS:
+1. Take the scrollwork pattern and tile/repeat it to completely fill the interior
+2. Use the black outline as a cookie-cutter mask
+3. Keep only the pattern pixels that fall within the outline boundary
+4. Delete all pattern pixels outside the boundary
+5. Result: Pattern visible ONLY inside, white background OUTSIDE
 
-NON-NEGOTIABLE PIXEL RULES:
+ABSOLUTE PIXEL RULES (NON-NEGOTIABLE):
+✓ Every pixel inside outline boundary = pattern color from the design image
+✓ Every pixel outside outline boundary = pure white (#FFFFFF)
+✓ Outline pixels = original black color, unchanged
+✓ NO gray pixels, NO soft edges, NO blending, NO semi-transparency
+✓ NO pattern spillage beyond the outline boundary
+✓ Crisp, sharp edges at the boundary
+✓ Complete fill with zero gaps inside the selected shape
 
-• Pattern must exist ONLY inside the selected boundary.
-• Any pixel outside the boundary must be pure white (#FFFFFF).
-• Zero texture outside the boundary.
-• Never darken the background.
-• Outline edges must remain sharp and unchanged.
+PATTERN QUALITY:
+• Scale the pattern to fill the entire interior
+• Preserve scrollwork detail and structure
+• Align pattern flow naturally with the shape's curves
+• Completely fill all enclosed areas within the boundary
+• No white gaps inside the selected shape
 
-SHAPE DETECTION LOGIC:
-- Identify all enclosed outline regions.
-- Select the region positioned farthest to the right.
-- Fill ONLY that region.
-- Leave all other regions completely empty.
+ANTI-REQUIREMENTS (GUARANTEED FAILURES):
+✗ Pattern extending outside the outline boundary
+✗ Gray or soft-edged pixels
+✗ Texture/pattern on the background
+✗ Gaps in the fill within shapes
+✗ Blurred or anti-aliased edges
 
-DO NOT:
-✗ assume the number of shapes  
-✗ bridge between shapes  
-✗ partially fill non-selected regions  
-✗ allow pattern to cross boundaries  
-
-PATTERN EXECUTION:
-
-• Completely fill the interior with no gaps  
-• Preserve the original scrollwork structure  
-• Do NOT redraw or invent ornamentation  
-• Scale uniformly  
-• Avoid stretching or distortion  
-
-FLOW CONTROL:
-Align scroll direction with the curvature of the boundary to create a natural engraving layout.
-
-RENDER RULES (FABRICATION SAFE):
-
-• Pure black and pure white only  
-• No gray values  
-• No gradients  
-• No blur  
-• No anti-aliasing  
-• Razor-sharp edges  
-
-BACKGROUND REQUIREMENT:
-The canvas must remain fully white except for:
-
-- black outlines  
-- pattern inside the selected shape  
-
-If any background shading appears, it is an error.
-
-FAIL CONDITIONS:
-
-- Dark or textured background  
-- Gray pixels  
-- Pattern outside boundary  
-- Filled non-selected shapes  
-- Soft edges  
-
-FINAL VALIDATION:
-Before output confirm:
-
-✓ Only the rightmost shape is filled  
-✓ Background is pure white  
-✓ All other shapes remain empty  
-✓ Edges are crisp  
+FINAL CHECKLIST BEFORE OUTPUT:
+□ All enclosed shapes are filled with the pattern
+□ All pattern is 100% inside the outlines
+□ All background is pure white
+□ No pattern spillage anywhere
+□ Outline edges are sharp and black
+□ Image is laser-ready
 
 OUTPUT:
-Generate a high-resolution, laser-ready engraving composite centered on a white canvas.
-
-";
+Generate the result on a white canvas with black outlines preserved and pattern completely filling all enclosed shapes.";
     }
 }

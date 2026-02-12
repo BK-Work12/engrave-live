@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { router } from "@inertiajs/react";
 import PrimaryButton from "../components/PrimaryButton";
+import FabricImageEditor from "../components/FabricImageEditor";
 
 export default function SeamlessPatternCreator() {
     const outlineInputRef = useRef(null);
@@ -11,6 +12,8 @@ export default function SeamlessPatternCreator() {
     const [patternFile, setPatternFile] = useState(null);
     const [generatedImage, setGeneratedImage] = useState(null);
     const [generatedImageFilename, setGeneratedImageFilename] = useState(null);
+    const [editedImage, setEditedImage] = useState(null);
+    const [editedImageBlob, setEditedImageBlob] = useState(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [borderOffset, setBorderOffset] = useState(0);
     const [validationMessage, setValidationMessage] = useState(null);
@@ -142,6 +145,18 @@ export default function SeamlessPatternCreator() {
         } finally {
             setIsGenerating(false);
         }
+    };
+
+    const handleImageEditorSave = (url, blob) => {
+        setEditedImage(url);
+        setEditedImageBlob(blob);
+        // Trigger download
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `generated_${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     return (
@@ -333,7 +348,8 @@ export default function SeamlessPatternCreator() {
                                     alt="Generated Design"
                                     className="w-full h-auto rounded-xl border border-[#616161] bg-white"
                                 />
-                                <div className="mt-4 flex justify-center gap-4 flex-wrap">
+                                <div className="mt-4 flex justify-center gap-4 flex-wrap flex-col sm:flex-row">
+                                    <FabricImageEditor imageUrl={generatedImage} onSave={handleImageEditorSave} />
                                     <PrimaryButton
                                         text="Generate Again"
                                         onClick={handleReset}

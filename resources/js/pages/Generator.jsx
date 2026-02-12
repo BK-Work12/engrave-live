@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { router } from "@inertiajs/react";
 import PrimaryButton from "../components/PrimaryButton";
+import FabricImageEditor from "../components/FabricImageEditor";
 
 export default function Generator() {
     const outlineInputRef = useRef(null);
@@ -9,6 +10,8 @@ export default function Generator() {
     const [outlineFile, setOutlineFile] = useState(null);
     const [generatedImage, setGeneratedImage] = useState(null);
     const [generatedImageFilename, setGeneratedImageFilename] = useState(null);
+    const [editedImage, setEditedImage] = useState(null);
+    const [editedImageBlob, setEditedImageBlob] = useState(null);
     const [isGenerating, setIsGenerating] = useState(false);
     
     // Pattern selection
@@ -257,9 +260,21 @@ export default function Generator() {
     };
 
     const handleDownloadPNG = () => {
-        if (!generatedImage) return;
+        if (!generatedImage && !editedImage) return;
         const link = document.createElement('a');
-        link.href = generatedImage;
+        link.href = editedImage || generatedImage;
+        link.download = `generated_${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleImageEditorSave = (url, blob) => {
+        setEditedImage(url);
+        setEditedImageBlob(blob);
+        // Trigger download
+        const link = document.createElement('a');
+        link.href = url;
         link.download = `generated_${Date.now()}.png`;
         document.body.appendChild(link);
         link.click();
@@ -373,6 +388,10 @@ export default function Generator() {
                                 {/* Download Options */}
                                 {generatedImage && (
                                     <div className="mt-4 space-y-3">
+                                        <div>
+                                            <p className="text-sm text-[#808080] mb-2">Edit & Download:</p>
+                                            <FabricImageEditor imageUrl={generatedImage} onSave={handleImageEditorSave} />
+                                        </div>
                                         <div>
                                             <p className="text-sm text-[#808080] mb-2">Download as:</p>
                                             <div className="flex gap-2">
