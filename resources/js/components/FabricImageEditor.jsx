@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import * as fabric from "fabric";
 
 export default function FabricImageEditor({ imageUrl, onSave }) {
@@ -12,11 +11,9 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
     
     const canvasRef = useRef(null);
     const fabricCanvasRef = useRef(null);
-    const portalRef = useRef(null);
     const [isEditing, setIsEditing] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [portalReady, setPortalReady] = useState(false);
     const [tool, setTool] = useState("select");
     const [drawColor, setDrawColor] = useState("#000000");
     const [brushWidth, setBrushWidth] = useState(2);
@@ -29,24 +26,6 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
     // Adjustments
     const [brightness, setBrightness] = useState(0);
     const [contrast, setContrast] = useState(0);
-
-    // Create portal container on mount
-    useEffect(() => {
-        if (!portalRef.current) {
-            const portalDiv = document.createElement('div');
-            portalDiv.id = 'fabric-editor-portal';
-            document.body.appendChild(portalDiv);
-            portalRef.current = portalDiv;
-            setPortalReady(true);
-        }
-        
-        return () => {
-            if (portalRef.current && portalRef.current.parentNode) {
-                portalRef.current.parentNode.removeChild(portalRef.current);
-                portalRef.current = null;
-            }
-        };
-    }, []);
 
     useEffect(() => {
         let mounted = true;
@@ -417,28 +396,21 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
 
     if (!isEditing) {
         return (
-            <div className="flex gap-2">
-                <button
-                    onClick={() => setIsEditing(true)}
-                    className="flex-1 bg-[#6366f1] hover:bg-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 20h9" />
-                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19H4v-3L16.5 3.5z" />
-                    </svg>
-                    Full Editor
-                </button>
-            </div>
+            <button
+                onClick={() => setIsEditing(true)}
+                className="w-full bg-[#6366f1] hover:bg-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19H4v-3L16.5 3.5z" />
+                </svg>
+                Full Editor
+            </button>
         );
     }
 
-    // Only render portal when it's ready
-    if (!portalReady || !portalRef.current) {
-        return null;
-    }
-
-    // Render modal in a portal to avoid React tree issues
-    return createPortal(
+    // Simple inline modal
+    return (
         <div 
             className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 overflow-y-auto" 
             style={{ zIndex: 9999 }}
@@ -664,7 +636,6 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
                     </div>
                 </div>
             </div>
-        </div>,
-        portalRef.current
+        </div>
     );
 }
