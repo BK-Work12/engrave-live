@@ -18,9 +18,10 @@ class ImageValidator
     const MAX_OUTLINE_DENSITY = 18.0;
     const MIN_WHITE_BACKGROUND_RATIO = 0.7;
     
-    // Optimal dimensions for best results
-    const OPTIMAL_MIN_SIZE = 500;
-    const OPTIMAL_MAX_SIZE = 1500;
+    // Optimal dimensions for best results (per EngraveFill guidelines - 1200px optimal)
+    const OPTIMAL_MIN_SIZE = 800;
+    const OPTIMAL_SIZE = 1200; // Recommended size for best results
+    const OPTIMAL_MAX_SIZE = 2000;
     const OPTIMAL_WIDTH_MM_EQUIV = 200; // 200mm = good results
 
     /**
@@ -167,6 +168,11 @@ class ImageValidator
             $warnings = array_merge($warnings, $thinCheck['warnings']);
             $metadata = array_merge($metadata, $thinCheck['metadata']);
 
+            // Check for shape spacing issues
+            $spacingCheck = $this->checkShapeSpacing($image);
+            $warnings = array_merge($warnings, $spacingCheck['warnings']);
+            $metadata = array_merge($metadata, $spacingCheck['metadata']);
+
             imagedestroy($image);
 
             return [
@@ -268,22 +274,27 @@ class ImageValidator
             );
         }
 
-        // Check for optimal size (based on user feedback about mm sizes)
+        // Check for optimal size per EngraveFill guidelines (1200px is ideal)
         $maxDim = max($width, $height);
         if ($maxDim < self::OPTIMAL_MIN_SIZE) {
             $warnings[] = sprintf(
-                'Image may be too small (%dpx max dimension). For best results, use images between %d-%dpx (equivalent to ~200mm).',
-                $maxDim, self::OPTIMAL_MIN_SIZE, self::OPTIMAL_MAX_SIZE
+                'Image may be too small (%dpx max dimension). For best results, use images of approximately %dpx (equivalent to ~200mm). Minimum is %dpx.',
+                $maxDim, self::OPTIMAL_SIZE, self::OPTIMAL_MIN_SIZE
             );
-        } elseif ($maxDim > self::OPTIMAL_MAX_SIZE && $maxDim <= 2000) {
+        } elseif ($maxDim < self::OPTIMAL_SIZE - 100) {
             $warnings[] = sprintf(
-                'Image is larger than optimal (%dpx max dimension). Dimensions between %d-%dpx often produce the best results. Very large images (>250mm equivalent) may cause outline distortion.',
-                $maxDim, self::OPTIMAL_MIN_SIZE, self::OPTIMAL_MAX_SIZE
+                'Image is smaller than optimal (%dpx max dimension). For best results, use images around %dpx (equivalent to ~200mm) for cleaner output.',
+                $maxDim, self::OPTIMAL_SIZE
+            );
+        } elseif ($maxDim > self::OPTIMAL_SIZE + 200 && $maxDim <= 2000) {
+            $warnings[] = sprintf(
+                'Image is larger than optimal (%dpx max dimension). Dimensions around %dpx often produce the best results (equivalent to ~200mm).',
+                $maxDim, self::OPTIMAL_SIZE
             );
         } elseif ($maxDim > 2000) {
             $warnings[] = sprintf(
-                'Very large image (%dpx). This may cause processing issues. Recommended size: %d-%dpx (approximately 150-200mm).',
-                $maxDim, self::OPTIMAL_MIN_SIZE, self::OPTIMAL_MAX_SIZE
+                'Very large image (%dpx). This may cause processing issues. Recommended size: %dpx ± 200px (approximately 150-200mm).',
+                $maxDim, self::OPTIMAL_SIZE
             );
         }
 
@@ -389,19 +400,21 @@ class ImageValidator
                 );
             }
 
-            // Check for highly complex outlines (e.g., full pistol layouts)
+            // Check for highly complex outlines (per EngraveFill guideline: complex shapes cause masking)
             $componentCount = $this->estimateComponentCount($image);
             if ($componentCount > 5) {
                 $warnings[] = sprintf(
-                    'Very complex outline detected (%d potential components). For best results, consider breaking this into separate components (e.g., grip, slide, frame) and uploading each individually. The AI produces cleaner, more detailed scrollwork on simpler shapes.',
+                    '⚠️  COMPLEX SHAPE WARNING (%d potential components): Per EngraveFill Pro guidelines, complex shapes with multiple parts often cause "MASKING" - where the pattern flows under the outline instead of conforming to it. RECOMMENDED: Separate components and upload individually for cleaner scrollwork. Basic, simple shapes produce the best results.',
                     $componentCount
                 );
             }
 
-            // Check aspect ratio for elongated shapes
+            // Check aspect ratio for elongated shapes per guidelines
             $aspectRatio = $width / max($height, 1);
-            if ($aspectRatio > 3 || $aspectRatio < 0.33) {
-                $warnings[] = 'Highly elongated shape detected. Very long/thin shapes may have areas where patterns cannot fit properly.';
+            if ($aspectRatio > 4 || $aspectRatio < 0.25) {
+                $warnings[] = 'Extremely elongated shape detected (aspect ratio: ' . round($aspectRatio, 2) . '). Very long/thin shapes may have areas where patterns cannot fit properly. Consider separating into multiple shapes or simplifying the outline.';
+            } elseif ($aspectRatio > 3 || $aspectRatio < 0.33) {
+                $warnings[] = 'Highly elongated shape detected (aspect ratio: ' . round($aspectRatio, 2) . '). Some pattern areas may not fill optimally.';
             }
         }
 
@@ -445,7 +458,7 @@ class ImageValidator
     }
 
     /**
-     * Generate helpful error message
+     * Generate helpful error message with EngraveFill Pro guidelines
      */
     public function generateErrorMessage(array $validation): string
     {
@@ -453,22 +466,38 @@ class ImageValidator
             if (!empty($validation['warnings'])) {
                 return "Image validated successfully, but please note:\n" . implode("\n", array_map(fn($w) => "• $w", $validation['warnings']));
             }
-            return "Image validated successfully!";
+            return "✅ Image validated successfully!";
         }
 
-        $message = "Image validation failed:\n\n**Errors:**\n";
+        $message = "❌ Image validation failed:\n\n**ERRORS:**\n";
         $message .= implode("\n", array_map(fn($e) => "• $e", $validation['errors']));
 
         if (!empty($validation['warnings'])) {
-            $message .= "\n\n**Warnings:**\n";
+            $message .= "\n\n**WARNINGS:**\n";
             $message .= implode("\n", array_map(fn($w) => "• $w", $validation['warnings']));
         }
 
-        $message .= "\n\n**Common Issues:**\n";
-        $message .= "• Ensure pure white (#FFFFFF) background\n";
-        $message .= "• Check that outlines are completely closed\n";
-        $message .= "• Patterns should have detailed designs; outlines should be simple\n";
-        $message .= "• Recommended size: 500-1500px on longest side\n";
+        $message .= "\n\n**EngraveFill Pro Best Practices (per v1.1 Guidelines):**\n\n";
+        $message .= "✓ **OUTLINE IMAGE REQUIREMENTS:**\n";
+        $message .= "  • Pure white (#FFFFFF) background with no gradients, shadows, or colors\n";
+        $message .= "  • Black outlined silhouette (closed paths only - no gaps)\n";
+        $message .= "  • Simple, basic shapes work best (complex multi-part shapes cause 'masking')\n";
+        $message .= "  • For complex items: SEPARATE COMPONENTS and upload individually\n";
+        $message .= "  • Adequate space around shape (don't crop too tightly)\n";
+        $message .= "  • Optimal size: ~1200px on longest dimension (≈200mm)\n\n";
+        
+        $message .= "✓ **PATTERN IMAGE REQUIREMENTS:**\n";
+        $message .= "  • Detailed, intricate design pattern\n";
+        $message .= "  • Seamless tileable pattern preferred\n";
+        $message .= "  • Organic scrollwork and decorative elements\n\n";
+        
+        $message .= "✓ **WHAT TO AVOID:**\n";
+        $message .= "  • ❌ Complex multi-part outlines (causes pattern masking)\n";
+        $message .= "  • ❌ Open or gap-filled outline boundaries\n";
+        $message .= "  • ❌ Tight/excessive cropping\n";
+        $message .= "  • ❌ Colored backgrounds or shadows\n";
+        $message .= "  • ❌ Very thin/narrow areas (<20px)\n";
+        $message .= "  • ❌ Text elements (convert to outline first)\n";
 
         return $message;
     }
@@ -512,14 +541,14 @@ class ImageValidator
 
         if ($edgeBlackRatio > 0.1) {
             $warnings[] = sprintf(
-                'Outline touches image edges (%.1f%% of edges). This may indicate an unclosed shape or cropped outline. Ensure your outline is fully contained within the image borders.',
+                '⚠️  TIGHT CROP DETECTED (%.1f%% of edges): Per EngraveFill Pro guidelines, the outline shape needs space around it for best results. Avoid cropping too tightly. Allow adequate margin/padding around the shape borders so the algorithm can properly adjust infill and borders.',
                 $edgeBlackRatio * 100
             );
         }
 
-        if ($thinLineCount > 5) {
+        if ($thinLineCount > 3) {
             $warnings[] = sprintf(
-                'Multiple thin lines detected (%d). Outlines should be closed shapes. Check for small gaps, especially at corners or where lines meet.',
+                'Thin/fragmented lines detected (%d instances). Per EngraveFill guidelines, outlines should be closed, solid shapes. Check for small gaps or disconnected parts, especially at corners or where lines meet. The outline boundary quality is critical for proper pattern filling.',
                 $thinLineCount
             );
         }
@@ -527,7 +556,8 @@ class ImageValidator
         // Use flood fill to detect discontinuities
         $gapDetected = $this->floodFillGapDetection($image);
         if ($gapDetected) {
-            $errors[] = 'Outline appears to have gaps or is not a closed shape. The AI requires completely closed outlines to fill properly. Please check your image in an editor and ensure all paths are closed.';
+            $errors[] = '❌ OUTLINE NOT CLOSED: The outline appears to have gaps or discontinuities. Per EngraveFill Pro guidelines, the outline boundary MUST be completely closed with no breaks. Open or interrupted paths cause the pattern to flow outside the intended area (\"masking\" issue). Please check your image in a vector or raster editor and ensure all outline paths are completely closed with no gaps or breaks.';
+        }
         }
 
         return [
@@ -780,8 +810,128 @@ class ImageValidator
     }
 
     /**
-     * Check if a pixel is dark
+     * Check for multiple separate shapes (per EngraveFill guideline: shapes should be properly spaced)
      */
+    protected function checkShapeSpacing($image): array
+    {
+        $warnings = [];
+        $metadata = [];
+
+        $width = imagesx($image);
+        $height = imagesy($image);
+
+        // Find all dark regions and their spacing
+        $regions = $this->findDiscreteRegions($image);
+        $metadata['region_count'] = count($regions);
+
+        if (count($regions) >= 2) {
+            // Check minimum distance between regions
+            $minDistance = PHP_INT_MAX;
+            for ($i = 0; $i < count($regions); $i++) {
+                for ($j = $i + 1; $j < count($regions); $j++) {
+                    $dist = $this->calculateRegionDistance($regions[$i], $regions[$j]);
+                    $minDistance = min($minDistance, $dist);
+                }
+            }
+
+            $metadata['min_spacing_pixels'] = $minDistance;
+
+            // Per EngraveFill guidelines: adequate spacing required
+            if ($minDistance < 10) {
+                $warnings[] = sprintf(
+                    '⚠️  SHAPES TOO CLOSE (%.0fpx spacing): Per EngraveFill Pro guidelines: When using multiple outlines in one image, ensure objects are spaced out. The app might see them as a single combined shape. Try angling one shape for better infill results.',
+                    $minDistance
+                );
+            } elseif ($minDistance < 20) {
+                $warnings[] = sprintf(
+                    '⚠️  CLOSE SPACING (%.0fpx): Multiple shapes detected. Ensure adequate spacing between objects for optimal results.',
+                    $minDistance
+                );
+            }
+        }
+
+        return [
+            'warnings' => $warnings,
+            'metadata' => $metadata
+        ];
+    }
+
+    /**
+     * Find discrete dark regions in the image
+     */
+    protected function findDiscreteRegions($image): array
+    {
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $visited = [];
+        $regions = [];
+
+        for ($y = 0; $y < $height; $y += 10) {
+            for ($x = 0; $x < $width; $x += 10) {
+                $key = (int)($x/10) . '_' . (int)($y/10);
+                if (!isset($visited[$key]) && $this->isPixelDark($image, $x, $y)) {
+                    $region = [
+                        'points' => [],
+                        'minX' => $x, 'maxX' => $x,
+                        'minY' => $y, 'maxY' => $y
+                    ];
+                    $this->floodFillRegion($image, $x, $y, $width, $height, $visited, $region);
+                    if (!empty($region['points'])) {
+                        $regions[] = $region;
+                    }
+                }
+            }
+        }
+
+        return $regions;
+    }
+
+    /**
+     * Flood fill to find region bounds
+     */
+    protected function floodFillRegion($image, $startX, $startY, $width, $height, &$visited, &$region): void
+    {
+        $queue = [[$startX, $startY]];
+        $maxIterations = 500;
+        $iterations = 0;
+
+        while (!empty($queue) && $iterations < $maxIterations) {
+            $iterations++;
+            [$x, $y] = array_shift($queue);
+            $key = (int)($x/10) . '_' . (int)($y/10);
+
+            if (isset($visited[$key])) continue;
+            if ($x < 0 || $x >= $width || $y < 0 || $y >= $height) continue;
+            if (!$this->isPixelDark($image, $x, $y)) continue;
+
+            $visited[$key] = true;
+            $region['points'][] = [$x, $y];
+            $region['minX'] = min($region['minX'], $x);
+            $region['maxX'] = max($region['maxX'], $x);
+            $region['minY'] = min($region['minY'], $y);
+            $region['maxY'] = max($region['maxY'], $y);
+
+            $queue[] = [$x + 10, $y];
+            $queue[] = [$x - 10, $y];
+            $queue[] = [$x, $y + 10];
+            $queue[] = [$x, $y - 10];
+        }
+    }
+
+    /**
+     * Calculate distance between two regions
+     */
+    protected function calculateRegionDistance(array $region1, array $region2): float
+    {
+        $x1 = ($region1['minX'] + $region1['maxX']) / 2;
+        $y1 = ($region1['minY'] + $region1['maxY']) / 2;
+        $x2 = ($region2['minX'] + $region2['maxX']) / 2;
+        $y2 = ($region2['minY'] + $region2['maxY']) / 2;
+
+        return sqrt(pow($x2 - $x1, 2) + pow($y2 - $y1, 2)) - 
+               (max($region1['maxX'] - $region1['minX'], $region1['maxY'] - $region1['minY']) / 2) -
+               (max($region2['maxX'] - $region2['minX'], $region2['maxY'] - $region2['minY']) / 2);
+    }
     protected function isPixelDark($image, int $x, int $y): bool
     {
         if ($x < 0 || $x >= imagesx($image) || $y < 0 || $y >= imagesy($image)) {

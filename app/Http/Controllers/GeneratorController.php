@@ -51,14 +51,14 @@ class GeneratorController extends Controller
             if ($outlineDensity > 20.0) {
                 return response()->json([
                     'success' => false,
-                    'error' => sprintf('The Outline Image (Density: %.2f%%) appears to be a complex design instead of an empty vector.', $outlineDensity),
+                    'error' => sprintf('❌ OUTLINE IMAGE ERROR (Density: %.2f%%): The outline appears to be a complex pattern/design instead of an empty vector/silhouette. Per EngraveFill Pro guidelines, outline images should be simple, closed black silhouettes on white backgrounds. Complex multi-part shapes should be separated and uploaded individually.', $outlineDensity),
                 ], 400);
             }
 
             if ($designDensity < 5.0) {
                 return response()->json([
                     'success' => false,
-                    'error' => sprintf('The Design Image (Density: %.2f%%) appears to be empty or too light to use as a pattern.', $designDensity),
+                    'error' => sprintf('❌ PATTERN IMAGE ERROR (Density: %.2f%%): The design image appears to be empty or too light. Pattern images need detailed, intricate designs (detailed scrollwork, decorative elements, etc.). Ensure your pattern has sufficient detail and contrast.', $designDensity),
                 ], 400);
             }
 
@@ -366,29 +366,33 @@ class GeneratorController extends Controller
 
     private function basePrompt(): string
     {
-        return "ACT AS A MASTER GUNSMITH AND HAND-ENGRAVER creating precise ornamental fill patterns.\n\n" .
+        return "ACT AS A MASTER GUNSMITH AND HAND-ENGRAVER creating precise ornamental fill patterns per EngraveFill Pro specifications.\n\n" .
             "TASK: Fill the INTERIOR areas enclosed by the black outline with the provided design pattern.\n\n" .
-            "CRITICAL MASKING RULES:\n" .
+            "CRITICAL MASKING RULES (EngraveFill Pro v1.1 - Seamless Patterns):\n" .
             "1. STRICT CONTAINMENT: The black outline lines define boundaries. Fill ONLY the white interior areas INSIDE these black boundaries.\n" .
             "2. PURE WHITE OUTSIDE: Everything outside the outlined shapes MUST remain completely white (#FFFFFF). ZERO content beyond boundaries.\n" .
             "3. PERFECT CLIPPING: Use the outline as a strict clipping mask. The scrollwork pattern should ONLY appear within enclosed areas.\n" .
-            "4. RESPECT HOLES: If there are hollow areas or internal holes within shapes, keep them empty (white).\n" .
-            "5. MULTIPLE SHAPES: Fill each separate enclosed shape independently with the pattern.\n\n" .
-            "FILL TECHNIQUE:\n" .
-            "- Apply the design pattern to completely fill the interior of each outlined shape\n" .
-            "- Adapt and repeat the pattern to cover all interior space densely\n" .
-            "- NO border-only decoration - fill the ENTIRE interior area\n" .
-            "- Pattern should flow naturally and cover empty spaces\n\n" .
+            "4. RESPECT HOLES & CUTOUTS: If there are hollow areas, cutouts, or internal holes within shapes, keep them empty (white).\n" .
+            "5. MULTIPLE SHAPES: Fill each separate enclosed shape independently with the pattern. Shapes may have internal white spaces which should remain white.\n" .
+            "6. SEAMLESS TILING: Apply the design pattern seamlessly with no visible seams or breaks as it repeats across the interior.\n\n" .
+            "PATTERN APPLICATION REQUIREMENTS:\n" .
+            "- The white interior space (within black boundaries) should be completely filled with the provided pattern\n" .
+            "- Adapt the pattern to cover all white interior space uniformly\n" .
+            "- Pattern flow should be organic and natural, conforming to the shape's interior\n" .
+            "- Tile seamlessly with no visible repetition artifacts\n" .
+            "- Completely fill all available interior area (not just borders)\n\n" .
             "STYLE REQUIREMENTS:\n" .
             "- Pure black and white linework only (#000000 and #FFFFFF)\n" .
-            "- No gray gradients or anti-aliasing blur\n" .
-            "- Crisp, high-contrast engraving lines\n" .
-            "- Do NOT add extra border lines around the outline\n\n" .
-            "ABSOLUTE CONSTRAINTS:\n" .
-            "✓ ZERO bleed outside outlined boundaries\n" .
-            "✓ Keep all exterior areas pure white\n" .
-            "✓ Fill interiors completely with dense pattern\n" .
-            "✓ Maintain clean edges at boundaries\n\n" .
-            "Remember: The outline shows BOUNDARIES (black lines). Everything INSIDE these boundaries should be filled with pattern. Everything OUTSIDE must stay white.";
+            "- No gray gradients, anti-aliasing, or soft edges\n" .
+            "- Crisp, high-contrast ornamental engraving lines\n" .
+            "- Do NOT add extra border lines beyond the provided outline\n" .
+            "- Do NOT thicken or alter the outline itself\n\n" .
+            "ABSOLUTE CONSTRAINTS (Non-negotiable):\n" .
+            "✓ ZERO bleed outside outlined boundaries - pattern must not extend beyond black lines\n" .
+            "✓ Keep ALL exterior areas pure white (#FFFFFF)\n" .
+            "✓ Fill interiors completely and densely with pattern\n" .
+            "✓ Maintain crisp, clean edges at all boundaries\n" .
+            "✓ Respect all cutouts and internal white spaces\n\n" .
+            "Remember: The outline shows BOUNDARIES (black lines). Everything INSIDE these boundaries should be filled with the design pattern. Everything OUTSIDE must stay pure white. Internal holes/cutouts stay white.";
     }
 }

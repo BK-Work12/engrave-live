@@ -13,6 +13,8 @@ export default function SeamlessPatternCreator() {
     const [generatedImageFilename, setGeneratedImageFilename] = useState(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [borderOffset, setBorderOffset] = useState(0);
+    const [validationMessage, setValidationMessage] = useState(null);
+    const [validationMessageType, setValidationMessageType] = useState('info'); // 'info', 'warning', 'error'
 
     const handleOutlineUpload = (file) => {
         if (!file) return;
@@ -43,6 +45,7 @@ export default function SeamlessPatternCreator() {
         setGeneratedImage(null);
         setGeneratedImageFilename(null);
         setBorderOffset(0);
+        setValidationMessage(null);
 
         // Reset file inputs
         if (outlineInputRef.current) {
@@ -133,7 +136,9 @@ export default function SeamlessPatternCreator() {
             }
         } catch (error) {
             console.error("Generation error:", error);
-            alert(`An error occurred during generation: ${error.message}. Please try again.`);
+            const errorMessage = error.message || 'Unknown error occurred';
+            setValidationMessage(`❌ ${errorMessage}`);
+            setValidationMessageType('error');
         } finally {
             setIsGenerating(false);
         }
@@ -143,6 +148,36 @@ export default function SeamlessPatternCreator() {
         <>
             <div className="container flex flex-col justify-center items-center mx-auto mt-12 mb-15 px-4">
                 <div className="w-full max-w-4xl">
+                    {/* EngraveFill Pro Guidelines Info Box */}
+                    <div className="bg-blue-950 border border-blue-700 rounded-[20px] p-4 mb-6">
+                        <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
+                            <span>📋 EngraveFill Pro Guidelines</span>
+                        </h4>
+                        <ul className="text-xs text-blue-100 space-y-1">
+                            <li>✓ Outline: Simple black silhouette on white background (~1200px optimal)</li>
+                            <li>✓ Pattern: Detailed, intricate design for seamless tiling</li>
+                            <li>✓ No gradients, shadows, or gaps in outline</li>
+                            <li>⚠️  Complex shapes cause 'masking' - separate components for best results</li>
+                        </ul>
+                    </div>
+
+                    {/* Validation Message Display */}
+                    {validationMessage && (
+                        <div className={`rounded-[20px] p-4 mb-6 border ${
+                            validationMessageType === 'error' ? 'bg-red-950 border-red-700 text-red-100' :
+                            validationMessageType === 'warning' ? 'bg-yellow-950 border-yellow-700 text-yellow-100' :
+                            'bg-blue-950 border-blue-700 text-blue-100'
+                        }`}>
+                            <p className="text-sm whitespace-pre-wrap">{validationMessage}</p>
+                            <button
+                                onClick={() => setValidationMessage(null)}
+                                className="mt-2 text-xs underline hover:no-underline"
+                            >
+                                Dismiss
+                            </button>
+                        </div>
+                    )}
+
                     {/* Two Image Inputs */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         {/* Outline Image Input */}
