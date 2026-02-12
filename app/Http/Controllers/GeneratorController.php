@@ -366,33 +366,68 @@ class GeneratorController extends Controller
 
     private function basePrompt(): string
     {
-        return "ACT AS A MASTER GUNSMITH AND HAND-ENGRAVER creating precise ornamental fill patterns per EngraveFill Pro specifications.\n\n" .
-            "TASK: Fill the INTERIOR areas enclosed by the black outline with the provided design pattern.\n\n" .
-            "CRITICAL MASKING RULES (EngraveFill Pro v1.1 - Seamless Patterns):\n" .
-            "1. STRICT CONTAINMENT: The black outline lines define boundaries. Fill ONLY the white interior areas INSIDE these black boundaries.\n" .
-            "2. PURE WHITE OUTSIDE: Everything outside the outlined shapes MUST remain completely white (#FFFFFF). ZERO content beyond boundaries.\n" .
-            "3. PERFECT CLIPPING: Use the outline as a strict clipping mask. The scrollwork pattern should ONLY appear within enclosed areas.\n" .
-            "4. RESPECT HOLES & CUTOUTS: If there are hollow areas, cutouts, or internal holes within shapes, keep them empty (white).\n" .
-            "5. MULTIPLE SHAPES: Fill each separate enclosed shape independently with the pattern. Shapes may have internal white spaces which should remain white.\n" .
-            "6. SEAMLESS TILING: Apply the design pattern seamlessly with no visible seams or breaks as it repeats across the interior.\n\n" .
-            "PATTERN APPLICATION REQUIREMENTS:\n" .
-            "- The white interior space (within black boundaries) should be completely filled with the provided pattern\n" .
-            "- Adapt the pattern to cover all white interior space uniformly\n" .
-            "- Pattern flow should be organic and natural, conforming to the shape's interior\n" .
-            "- Tile seamlessly with no visible repetition artifacts\n" .
-            "- Completely fill all available interior area (not just borders)\n\n" .
-            "STYLE REQUIREMENTS:\n" .
-            "- Pure black and white linework only (#000000 and #FFFFFF)\n" .
-            "- No gray gradients, anti-aliasing, or soft edges\n" .
-            "- Crisp, high-contrast ornamental engraving lines\n" .
-            "- Do NOT add extra border lines beyond the provided outline\n" .
-            "- Do NOT thicken or alter the outline itself\n\n" .
-            "ABSOLUTE CONSTRAINTS (Non-negotiable):\n" .
-            "✓ ZERO bleed outside outlined boundaries - pattern must not extend beyond black lines\n" .
-            "✓ Keep ALL exterior areas pure white (#FFFFFF)\n" .
-            "✓ Fill interiors completely and densely with pattern\n" .
-            "✓ Maintain crisp, clean edges at all boundaries\n" .
-            "✓ Respect all cutouts and internal white spaces\n\n" .
-            "Remember: The outline shows BOUNDARIES (black lines). Everything INSIDE these boundaries should be filled with the design pattern. Everything OUTSIDE must stay pure white. Internal holes/cutouts stay white.";
+        return "ACT AS an elite master gunsmith and hand-engraver specializing in precision ornamental scrollwork.
+
+PRIMARY OBJECTIVE:
+Fill ONLY the interior white regions that are completely enclosed by black outline boundaries using the provided pattern image.
+
+HARD MASK RULE (HIGHEST PRIORITY):
+Treat the black outline as a HARD CLIPPING MASK.
+
+• Pattern pixels MUST NEVER cross, touch, fade into, or appear outside the black boundary.
+• The exterior area MUST remain pure white (#FFFFFF).
+• The black outline MUST remain fully visible, sharp, and unchanged.
+
+INPUT LOGIC:
+- Outline Image → defines the fill boundary.
+- Pattern Image → must be tiled inside the boundary only.
+
+EXECUTION RULES:
+
+1. INTERIOR FILL ONLY  
+Apply the pattern strictly inside enclosed white regions.
+
+2. ZERO EDGE DECORATION  
+Do NOT decorate borders, edges, or outline lines.
+
+3. PRESERVE NEGATIVE SPACE  
+Any internal holes or cutouts must remain pure white.
+
+4. SEAMLESS PATTERN TILING  
+The pattern must repeat flawlessly with:
+- no seams  
+- no stretching  
+- no warping  
+- no visible repetition artifacts  
+
+5. CRISP BOUNDARY CONTACT  
+Pattern should meet the inside edge cleanly with razor-sharp separation.
+
+6. NO PATTERN LEAKAGE  
+If a region is not fully enclosed by black lines, DO NOT fill it.
+
+RENDERING STYLE:
+
+• Pure black and white only  
+• No gray values  
+• No gradients  
+• No anti-aliasing  
+• No soft edges  
+
+Visual style should resemble high-end firearm or jewelry engraving:
+dense, elegant, balanced ornamental scrollwork.
+
+FAIL CONDITIONS (MUST BE AVOIDED):
+
+- Pattern outside boundary  
+- Decorated outlines  
+- Gray pixels  
+- Blurry edges  
+- Broken tiling  
+- Filled holes  
+
+FINAL CHECK BEFORE OUTPUT:
+Verify that pattern exists ONLY inside enclosed regions and that all exterior space is completely white.
+";
     }
 }
