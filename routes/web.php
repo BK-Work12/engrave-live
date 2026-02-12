@@ -59,7 +59,7 @@ Route::get('/ai-design-generator', fn () => Inertia::render('AIDesignGenerator')
 Route::get('/seamless-patterns', fn () => Inertia::render('SeamlessPatternCreator'));
 Route::get("/generator", fn () => Inertia::render("Generator"));
 Route::get("/svg-tracing-tool", fn () => Inertia::render("SVGTracingTool"));
-Route::get('/image-editor', fn () => Inertia::render('ImageEditor'));
+Route::get('/image-editor', [App\Http\Controllers\ImageEditorController::class, 'show']);
 Route::get('/svg-tracing', fn () => Inertia::render('SVGTracingTool'));
 Route::get('/outline-generator', fn () => Inertia::render('OutlineGenerator'));
 Route::get('/pattern-upload', fn () => Inertia::render('PatternUpload'));

@@ -8,17 +8,8 @@ class ImageEditorController extends Controller
 {
     public function show()
     {
-        $imageUrl = request()->query('image');
-        
-        if (!$imageUrl) {
-            return Inertia::render('ImageEditor', [
-                'imageUrl' => null,
-                'error' => 'No image URL provided'
-            ]);
-        }
-        
-        return Inertia::render('ImageEditor', [
-            'imageUrl' => $imageUrl,
-        ]);
+        // Image is passed via sessionStorage from the client side
+        // This page just renders the editor interface
+        return Inertia::render('ImageEditor');
     }
 }

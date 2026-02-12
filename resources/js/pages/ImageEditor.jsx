@@ -7,20 +7,15 @@ export default function ImageEditor() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        // Get image URL from query parameter or sessionStorage
+        // Try to get image from sessionStorage first
         try {
-            const params = new URLSearchParams(window.location.search);
-            let url = params.get('image');
-            
-            // If not in URL param, check sessionStorage
-            if (!url && typeof window !== 'undefined') {
-                url = sessionStorage.getItem('editorImageUrl');
-            }
-            
-            if (url) {
-                setImageUrl(url);
+            const storedImage = sessionStorage.getItem('canvasEditorImage');
+            if (storedImage) {
+                setImageUrl(storedImage);
+                // Clear after retrieving
+                sessionStorage.removeItem('canvasEditorImage');
             } else {
-                setError("No image URL provided. Please select an image to edit from the generator.");
+                setError("No image found. Please click 'Canvas Edit (New Tab)' from the generator.");
             }
         } catch (err) {
             setError("Error loading image: " + err.message);
@@ -30,10 +25,6 @@ export default function ImageEditor() {
     }, []);
 
     const handleClose = () => {
-        // Clear sessionStorage
-        if (typeof window !== 'undefined') {
-            sessionStorage.removeItem('editorImageUrl');
-        }
         window.close();
     };
 
@@ -93,8 +84,7 @@ export default function ImageEditor() {
                             imageUrl={imageUrl}
                             autoOpen={true}
                             onSave={(url, blob) => {
-                                // Image is saved and downloaded automatically
-                                console.log("Image saved and downloaded");
+                                console.log("Image edited and downloaded");
                             }}
                             onClose={handleClose}
                         />

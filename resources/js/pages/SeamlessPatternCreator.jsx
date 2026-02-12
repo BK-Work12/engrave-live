@@ -358,8 +358,25 @@ export default function SeamlessPatternCreator() {
                                     </button>
                                     <button
                                         onClick={() => {
-                                            sessionStorage.setItem('editorImageUrl', generatedImage);
-                                            window.open('/image-editor');
+                                            try {
+                                                if (!generatedImage) {
+                                                    alert('No image available to edit');
+                                                    return;
+                                                }
+                                                // Store image URL in sessionStorage
+                                                sessionStorage.setItem('canvasEditorImage', generatedImage);
+                                                // Open in new tab
+                                                const newWindow = window.open('/image-editor', '_blank');
+                                                if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                                                    // Popup was blocked, try in same tab
+                                                    if (confirm('Popup blocked. Open editor in current tab?')) {
+                                                        window.location.href = '/image-editor';
+                                                    }
+                                                }
+                                            } catch (error) {
+                                                console.error('Error opening editor:', error);
+                                                alert('Failed to open editor. Please try again.');
+                                            }
                                         }}
                                         className="flex-1 min-w-[150px] bg-gradient-to-r from-[#5F34FF] to-[#C459C6] hover:from-[#4F24FF] hover:to-[#B449B6] text-white px-4 py-3 rounded-lg text-sm font-semibold transition-all"
                                     >
