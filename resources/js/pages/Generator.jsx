@@ -11,6 +11,7 @@ export default function Generator() {
     const [outlineFile, setOutlineFile] = useState(null);
     const [generatedImage, setGeneratedImage] = useState(null);
     const [generatedImageFilename, setGeneratedImageFilename] = useState(null);
+    const [generatedSvgUrl, setGeneratedSvgUrl] = useState(null);
     const [editedImage, setEditedImage] = useState(null);
     const [editedImageBlob, setEditedImageBlob] = useState(null);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -218,6 +219,10 @@ export default function Generator() {
                 if (responseData.success && responseData.image_url) {
                     imageUrl = responseData.image_url;
                     filename = responseData.filename || '';
+                    // Capture SVG URL if available
+                    if (responseData.svg_url) {
+                        setGeneratedSvgUrl(responseData.svg_url);
+                    }
                 } else if (!responseData.success) {
                     throw new Error(responseData.error || 'Generation failed');
                 }
@@ -284,9 +289,24 @@ export default function Generator() {
     };
 
     const handleDownloadSVG = () => {
-        if (!generatedImageFilename) return;
-        const svgFilename = generatedImageFilename.replace('.png', '.svg');
-        window.open(`${API_BASE}/static/uploads/${svgFilename}`, '_blank');
+        if (generatedSvgUrl) {
+            // Use the SVG URL from backend response
+            const link = document.createElement('a');
+            link.href = generatedSvgUrl;
+            link.download = generatedImageFilename ? generatedImageFilename.replace('.png', '.svg') : 'design.svg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else if (generatedImageFilename) {
+            // Fallback: construct URL from filename
+            const svgFilename = generatedImageFilename.replace('.png', '.svg');
+            const link = document.createElement('a');
+            link.href = `/uploads/${svgFilename}`;
+            link.download = svgFilename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     };
 
     const handleOpenInSVGTool = () => {
