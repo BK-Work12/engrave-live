@@ -408,11 +408,13 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
         setIsLoading(false);
     };
 
-    if (!isEditing) {
-        return (
+    // Always render both button and modal, toggle with CSS
+    return (
+        <>
+            {/* Button - hidden when editing */}
             <button
                 onClick={() => setIsEditing(true)}
-                className="w-full bg-[#6366f1] hover:bg-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+                className={`w-full bg-[#6366f1] hover:bg-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${isEditing ? 'hidden' : ''}`}
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 20h9" />
@@ -420,20 +422,18 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
                 </svg>
                 Full Editor
             </button>
-        );
-    }
 
-    // Simple inline modal
-    return (
-        <div 
-            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 overflow-y-auto" 
-            style={{ zIndex: 9999 }}
-            onClick={(e) => {
-                if (e.target === e.currentTarget) {
-                    closeEditor();
-                }
-            }}
-        >
+            {/* Modal - hidden when not editing */}
+            {isEditing && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 overflow-y-auto" 
+                    style={{ zIndex: 9999 }}
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) {
+                            closeEditor();
+                        }
+                    }}
+                >
             <div className="bg-[#171616] rounded-2xl max-w-6xl w-full my-4 relative">
                 {/* Header with close button */}
                 <div className="p-4 sm:p-6 border-b border-[#2F2E2E]">
@@ -651,5 +651,7 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
                 </div>
             </div>
         </div>
+            )}
+        </>
     );
 }
