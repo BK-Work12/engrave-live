@@ -12,9 +12,11 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
     
     const canvasRef = useRef(null);
     const fabricCanvasRef = useRef(null);
+    const portalRef = useRef(null);
     const [isEditing, setIsEditing] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [portalReady, setPortalReady] = useState(false);
     const [tool, setTool] = useState("select");
     const [drawColor, setDrawColor] = useState("#000000");
     const [brushWidth, setBrushWidth] = useState(2);
@@ -27,6 +29,24 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
     // Adjustments
     const [brightness, setBrightness] = useState(0);
     const [contrast, setContrast] = useState(0);
+
+    // Create portal container on mount
+    useEffect(() => {
+        if (!portalRef.current) {
+            const portalDiv = document.createElement('div');
+            portalDiv.id = 'fabric-editor-portal';
+            document.body.appendChild(portalDiv);
+            portalRef.current = portalDiv;
+            setPortalReady(true);
+        }
+        
+        return () => {
+            if (portalRef.current && portalRef.current.parentNode) {
+                portalRef.current.parentNode.removeChild(portalRef.current);
+                portalRef.current = null;
+            }
+        };
+    }, []);
 
     useEffect(() => {
         let mounted = true;
@@ -383,9 +403,13 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
     };
 
     const closeEditor = () => {
-        if (fabricCanvasRef.current) {
-            fabricCanvasRef.current.dispose();
-            fabricCanvasRef.current = null;
+        try {
+            if (fabricCanvasRef.current) {
+                fabricCanvasRef.current.dispose();
+                fabricCanvasRef.current = null;
+            }
+        } catch (error) {
+            console.error('Error disposing canvas:', error);
         }
         setIsEditing(false);
         setIsLoading(false);
@@ -406,6 +430,11 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
                 </button>
             </div>
         );
+    }
+
+    // Only render portal when it's ready
+    if (!portalReady || !portalRef.current) {
+        return null;
     }
 
     // Render modal in a portal to avoid React tree issues
@@ -636,6 +665,6 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
                 </div>
             </div>
         </div>,
-        document.body
+        portalRef.current
     );
 }
