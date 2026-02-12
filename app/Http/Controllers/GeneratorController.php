@@ -366,68 +366,78 @@ class GeneratorController extends Controller
 
     private function basePrompt(): string
     {
-        return "ACT AS an elite master gunsmith and hand-engraver specializing in precision ornamental scrollwork.
+        return "SYSTEM ROLE:
+Act as a precision engraving compositor specializing in firearm and metal laser engraving layouts.
+
+INPUTS:
+You are provided two images:
+
+[Image 1 – OUTLINE]
+A black outline defining a closed boundary. This outline is a HARD MASK.
+
+[Image 2 – PATTERN]
+A high-detail acanthus scrollwork design to be used as the fill texture.
 
 PRIMARY OBJECTIVE:
-Fill ONLY the interior white regions that are completely enclosed by black outline boundaries using the provided pattern image.
+Map the scrollwork pattern inside the outline with perfect boundary compliance to produce a fabrication-ready engraving graphic.
 
-HARD MASK RULE (HIGHEST PRIORITY):
-Treat the black outline as a HARD CLIPPING MASK.
+HARD BOUNDARY RULE (TOP PRIORITY):
+Treat the outline as a HARD CLIPPING MASK.
 
-• Pattern pixels MUST NEVER cross, touch, fade into, or appear outside the black boundary.
-• The exterior area MUST remain pure white (#FFFFFF).
-• The black outline MUST remain fully visible, sharp, and unchanged.
+• Pattern MUST exist ONLY inside enclosed regions.
+• Pattern MUST NOT cross, touch, fade into, or appear outside the boundary.
+• Exterior space must remain pure white (#FFFFFF).
+• Outline edges must remain sharp and fully visible.
 
-INPUT LOGIC:
-- Outline Image → defines the fill boundary.
-- Pattern Image → must be tiled inside the boundary only.
+EXECUTION REQUIREMENTS:
 
-EXECUTION RULES:
+PATTERN FILL
+- Completely fill all enclosed interior space.
+- Do NOT leave gaps.
+- Do NOT decorate borders or outlines.
 
-1. INTERIOR FILL ONLY  
-Apply the pattern strictly inside enclosed white regions.
+PATTERN PRESERVATION
+- Preserve the original structure of the scrollwork.
+- Do NOT redraw the pattern.
+- Do NOT simplify details.
+- Do NOT introduce new ornamental elements.
 
-2. ZERO EDGE DECORATION  
-Do NOT decorate borders, edges, or outline lines.
+INTELLIGENT SCALING
+- Scale uniformly to fit the geometry.
+- Maintain correct leaf proportions.
+- Avoid stretching or distortion.
 
-3. PRESERVE NEGATIVE SPACE  
-Any internal holes or cutouts must remain pure white.
+FLOW ADAPTATION
+- Align scroll direction to follow the curvature of the shape when possible.
+- Maintain visual balance across the filled area.
 
-4. SEAMLESS PATTERN TILING  
-The pattern must repeat flawlessly with:
-- no seams  
-- no stretching  
-- no warping  
-- no visible repetition artifacts  
+BACKGROUND TREATMENT
+- Use a deep-relief engraving look.
+- Scrollwork should read as polished metal.
+- Background should appear darker via stipple or fine texture.
+- Keep texture subtle and fabrication-safe.
 
-5. CRISP BOUNDARY CONTACT  
-Pattern should meet the inside edge cleanly with razor-sharp separation.
-
-6. NO PATTERN LEAKAGE  
-If a region is not fully enclosed by black lines, DO NOT fill it.
-
-RENDERING STYLE:
-
+RENDER RULES:
 • Pure black and white only  
-• No gray values  
-• No gradients  
+• No gray gradients  
+• No blur  
 • No anti-aliasing  
-• No soft edges  
+• Razor-sharp edges  
 
-Visual style should resemble high-end firearm or jewelry engraving:
-dense, elegant, balanced ornamental scrollwork.
+FAIL CONDITIONS (MUST NOT OCCUR):
+- Pattern outside boundary
+- Distorted scrollwork
+- Visible seams
+- Gray pixels
+- Soft edges
+- Broken tiling
+- Altered outline
 
-FAIL CONDITIONS (MUST BE AVOIDED):
+OUTPUT:
+Generate a high-resolution, centered engraving composite on a pure white background suitable for laser engraving or CNC fabrication.
 
-- Pattern outside boundary  
-- Decorated outlines  
-- Gray pixels  
-- Blurry edges  
-- Broken tiling  
-- Filled holes  
-
-FINAL CHECK BEFORE OUTPUT:
-Verify that pattern exists ONLY inside enclosed regions and that all exterior space is completely white.
+FINAL VALIDATION:
+Before producing the image, verify that all pattern pixels are fully contained within the outline and that the exterior is completely white.
 ";
     }
 }
