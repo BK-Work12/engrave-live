@@ -34,7 +34,7 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
             console.log('Editor opened, initializing fabric canvas...');
             // Small delay to ensure DOM is ready
             setTimeout(() => {
-                if (mounted) {
+                if (mounted && canvasRef.current) {
                     initializeFabric();
                 }
             }, 100);
@@ -58,6 +58,20 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
             document.body.style.overflow = 'unset';
         };
     }, [isEditing]);
+    
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (fabricCanvasRef.current) {
+                try {
+                    fabricCanvasRef.current.dispose();
+                    fabricCanvasRef.current = null;
+                } catch (error) {
+                    console.error('Error disposing canvas on unmount:', error);
+                }
+            }
+        };
+    }, []);
 
     const initializeFabric = () => {
         console.log('=== initializeFabric called ===');

@@ -349,7 +349,7 @@ export default function SeamlessPatternCreator() {
                                     className="w-full h-auto rounded-xl border border-[#616161] bg-white"
                                 />
                                 <div className="mt-4 flex justify-center gap-4 flex-wrap flex-col sm:flex-row">
-                                    <FabricImageEditor imageUrl={generatedImage} onSave={handleImageEditorSave} />
+                                    <FabricImageEditor key={generatedImage} imageUrl={generatedImage} onSave={handleImageEditorSave} />
                                     <PrimaryButton
                                         text="Generate Again"
                                         onClick={handleReset}

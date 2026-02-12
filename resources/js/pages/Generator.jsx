@@ -390,7 +390,7 @@ export default function Generator() {
                                     <div className="mt-4 space-y-3">
                                         <div>
                                             <p className="text-sm text-[#808080] mb-2">Edit & Download:</p>
-                                            <FabricImageEditor imageUrl={generatedImage} onSave={handleImageEditorSave} />
+                                            <FabricImageEditor key={generatedImage} imageUrl={generatedImage} onSave={handleImageEditorSave} />
                                         </div>
                                         <div>
                                             <p className="text-sm text-[#808080] mb-2">Download as:</p>
