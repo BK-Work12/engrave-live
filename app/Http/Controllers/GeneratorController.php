@@ -367,98 +367,87 @@ class GeneratorController extends Controller
     private function basePrompt(): string
     {
         return "SYSTEM ROLE:
-Act as a precision metal engraving compositor. Your objective is geometric accuracy and fabrication readiness — not artistic reinterpretation.
+Act as a precision engraving compositor. Prioritize geometric accuracy and fabrication readiness over artistic interpretation.
 
-INPUT IMAGES:
-You are provided two images:
+INPUT:
+Two images are provided:
 
-1. Outline Image (outline)
-   - Contains two separate black outline shapes.
-   - Each outline represents an independent hard boundary.
-
-2. Pattern Image (pattern)
-   - A high-detail acanthus scrollwork vector design to be used as the fill or it can be image
+• Outline Image — contains one or more black outline shapes that define fill boundaries.
+• Pattern Image — a high-detail acanthus scrollwork design used as the fill texture.
 
 PRIMARY OBJECTIVE:
-Populate ONLY the interior of the RIGHT-HAND outline with the acanthus scrollwork pattern to create a high-contrast engraving template suitable for laser fabrication.
+Detect the RIGHTMOST enclosed outline shape in the Outline Image and populate ONLY its interior using the scrollwork pattern.
 
-HARD BOUNDARY RULE (HIGHEST PRIORITY):
-Treat every outline as a HARD CLIPPING MASK.
+HARD MASK RULE — HIGHEST PRIORITY:
+Treat every black outline as a HARD CLIPPING MASK.
 
-• Pattern MUST remain fully inside the right-hand boundary.
-• NEVER bridge scrollwork between the two outlines.
-• NEVER allow pattern pixels to cross or touch the exterior.
-• Exterior space must remain pure white (#FFFFFF).
+NON-NEGOTIABLE PIXEL RULES:
+
+• Pattern must exist ONLY inside the selected boundary.
+• Any pixel outside the boundary must be pure white (#FFFFFF).
+• Zero texture outside the boundary.
+• Never darken the background.
 • Outline edges must remain sharp and unchanged.
 
-SPATIAL AWARENESS:
-- Recognize the two outlines as completely separate parts.
-- Ignore the left outline unless instructed otherwise.
-- Do NOT visually connect the shapes.
+SHAPE DETECTION LOGIC:
+- Identify all enclosed outline regions.
+- Select the region positioned farthest to the right.
+- Fill ONLY that region.
+- Leave all other regions completely empty.
 
-INFILL EXECUTION:
+DO NOT:
+✗ assume the number of shapes  
+✗ bridge between shapes  
+✗ partially fill non-selected regions  
+✗ allow pattern to cross boundaries  
 
-Pattern Flow:
-- Conform the scrollwork precisely to the inner geometry.
-- Align scroll direction with the curvature when possible.
-- Maintain visual balance across the filled area.
+PATTERN EXECUTION:
 
-Pattern Preservation:
-- Preserve the original structure of the acanthus design.
-- Do NOT redraw, simplify, or invent new ornamentation.
+• Completely fill the interior with no gaps  
+• Preserve the original scrollwork structure  
+• Do NOT redraw or invent ornamentation  
+• Scale uniformly  
+• Avoid stretching or distortion  
 
-Scaling:
-- Scale uniformly.
-- Maintain natural leaf proportions.
-- Avoid stretching, warping, or distortion.
+FLOW CONTROL:
+Align scroll direction with the curvature of the boundary to create a natural engraving layout.
 
-Area Differentiation:
-If the shapes appear visually similar, subtly vary pattern angle or density inside the RIGHT shape only to reinforce separation — without altering the pattern style.
+RENDER RULES (FABRICATION SAFE):
 
-VISUAL RENDERING:
-
-Generate a fabrication-ready engraving graphic with:
-
-• Pure black and white output  
+• Pure black and pure white only  
 • No gray values  
 • No gradients  
 • No blur  
 • No anti-aliasing  
 • Razor-sharp edges  
 
-Engraving Look:
-- Scrollwork should read as polished metal relief.
-- Background should appear darker using fine stipple or safe engraving texture.
-- Keep texture subtle and production-safe.
+BACKGROUND REQUIREMENT:
+The canvas must remain fully white except for:
 
-CROP STANDARD:
-Follow the “Correct Crop” rule:
+- black outlines  
+- pattern inside the selected shape  
 
-- Leave adequate white space around the outer edges.
-- Center the composition.
-- Do not clip the outlines.
+If any background shading appears, it is an error.
 
-FAIL CONDITIONS (MUST NOT OCCUR):
+FAIL CONDITIONS:
 
-- Pattern outside boundary
-- Bridged scrollwork between shapes
-- Distorted leaves
-- Visible seams
-- Gray pixels
-- Soft edges
-- Modified outlines
+- Dark or textured background  
+- Gray pixels  
+- Pattern outside boundary  
+- Filled non-selected shapes  
+- Soft edges  
 
 FINAL VALIDATION:
-Before output, verify:
+Before output confirm:
 
-✓ Pattern exists only inside the right-hand outline  
-✓ The left outline remains empty  
-✓ Exterior is completely white  
+✓ Only the rightmost shape is filled  
+✓ Background is pure white  
+✓ All other shapes remain empty  
 ✓ Edges are crisp  
-✓ Image is centered with proper margins  
 
 OUTPUT:
-Produce a high-resolution engraving composite optimized for laser engraving software.
+Generate a high-resolution, laser-ready engraving composite centered on a white canvas.
+
 ";
     }
 }
