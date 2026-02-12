@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { router } from "@inertiajs/react";
 import PrimaryButton from "../components/PrimaryButton";
 import FabricImageEditor from "../components/FabricImageEditor";
+import AdvancedImageEditor from "../components/AdvancedImageEditor";
 
 export default function Generator() {
     const outlineInputRef = useRef(null);
@@ -13,6 +14,7 @@ export default function Generator() {
     const [editedImage, setEditedImage] = useState(null);
     const [editedImageBlob, setEditedImageBlob] = useState(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isCanvasEditorOpen, setIsCanvasEditorOpen] = useState(false);
     
     // Pattern selection
     const [patternLibraries, setPatternLibraries] = useState([]);
@@ -389,6 +391,26 @@ export default function Generator() {
                                 {generatedImage && (
                                     <div className="mt-4 space-y-3">
                                         <div>
+                                            <p className="text-sm text-[#808080] mb-2">Canvas Edit:</p>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => setIsCanvasEditorOpen(true)}
+                                                    className="flex-1 bg-gradient-to-r from-[#5F34FF] to-[#C459C6] hover:from-[#4F24FF] hover:to-[#B449B6] text-white px-4 py-3 rounded-lg text-base font-semibold transition-all"
+                                                >
+                                                    Open Modal
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        sessionStorage.setItem('editorImageUrl', generatedImage);
+                                                        window.open('/image-editor');
+                                                    }}
+                                                    className="flex-1 bg-gradient-to-r from-[#5F34FF] to-[#C459C6] hover:from-[#4F24FF] hover:to-[#B449B6] text-white px-4 py-3 rounded-lg text-base font-semibold transition-all"
+                                                >
+                                                    Open New Tab
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div>
                                             <p className="text-sm text-[#808080] mb-2">Edit & Download:</p>
                                             <FabricImageEditor key={generatedImage} imageUrl={generatedImage} onSave={handleImageEditorSave} />
                                         </div>
@@ -597,6 +619,39 @@ export default function Generator() {
                     </div>
                 </div>
             </div>
+
+            {/* Canvas Editor Modal */}
+            {isCanvasEditorOpen && generatedImage && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4 overflow-auto">
+                    <div className="bg-[#171616] rounded-[30px] p-8 max-w-6xl w-full max-h-[90vh] overflow-auto">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-semibold text-white">Canvas Editor</h2>
+                            <button
+                                onClick={() => setIsCanvasEditorOpen(false)}
+                                className="text-[#808080] hover:text-white transition-colors"
+                                aria-label="Close editor"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="bg-[#0D0D0D] rounded-xl p-6">
+                            <AdvancedImageEditor
+                                imageUrl={generatedImage}
+                                autoOpen={true}
+                                onSave={(url, blob) => {
+                                    setEditedImage(url);
+                                    setEditedImageBlob(blob);
+                                    setIsCanvasEditorOpen(false);
+                                }}
+                                onClose={() => setIsCanvasEditorOpen(false)}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

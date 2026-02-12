@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { router } from "@inertiajs/react";
 import PrimaryButton from "../components/PrimaryButton";
-import FabricImageEditor from "../components/FabricImageEditor";
+import AdvancedImageEditor from "../components/AdvancedImageEditor";
 
 export default function SeamlessPatternCreator() {
     const outlineInputRef = useRef(null);
@@ -18,6 +18,7 @@ export default function SeamlessPatternCreator() {
     const [borderOffset, setBorderOffset] = useState(0);
     const [validationMessage, setValidationMessage] = useState(null);
     const [validationMessageType, setValidationMessageType] = useState('info'); // 'info', 'warning', 'error'
+    const [isCanvasEditorOpen, setIsCanvasEditorOpen] = useState(false);
 
     const handleOutlineUpload = (file) => {
         if (!file) return;
@@ -348,8 +349,22 @@ export default function SeamlessPatternCreator() {
                                     alt="Generated Design"
                                     className="w-full h-auto rounded-xl border border-[#616161] bg-white"
                                 />
-                                <div className="mt-4 flex justify-center gap-4 flex-wrap flex-col sm:flex-row">
-                                    <FabricImageEditor key={generatedImage} imageUrl={generatedImage} onSave={handleImageEditorSave} />
+                                <div className="mt-4 flex justify-center gap-3 flex-wrap flex-col sm:flex-row">
+                                    <button
+                                        onClick={() => setIsCanvasEditorOpen(true)}
+                                        className="flex-1 min-w-[150px] bg-gradient-to-r from-[#5F34FF] to-[#C459C6] hover:from-[#4F24FF] hover:to-[#B449B6] text-white px-4 py-3 rounded-lg text-sm font-semibold transition-all"
+                                    >
+                                        Canvas Edit (Modal)
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            sessionStorage.setItem('editorImageUrl', generatedImage);
+                                            window.open('/image-editor');
+                                        }}
+                                        className="flex-1 min-w-[150px] bg-gradient-to-r from-[#5F34FF] to-[#C459C6] hover:from-[#4F24FF] hover:to-[#B449B6] text-white px-4 py-3 rounded-lg text-sm font-semibold transition-all"
+                                    >
+                                        Canvas Edit (New Tab)
+                                    </button>
                                     <PrimaryButton
                                         text="Generate Again"
                                         onClick={handleReset}
@@ -377,6 +392,39 @@ export default function SeamlessPatternCreator() {
                     </div>
                 </div>
             </div>
+
+            {/* Canvas Editor Modal */}
+            {isCanvasEditorOpen && generatedImage && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4 overflow-auto">
+                    <div className="bg-[#171616] rounded-[30px] p-8 max-w-6xl w-full max-h-[90vh] overflow-auto">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-semibold text-white">Canvas Editor</h2>
+                            <button
+                                onClick={() => setIsCanvasEditorOpen(false)}
+                                className="text-[#808080] hover:text-white transition-colors"
+                                aria-label="Close editor"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="bg-[#0D0D0D] rounded-xl p-6">
+                            <AdvancedImageEditor
+                                imageUrl={generatedImage}
+                                autoOpen={true}
+                                onSave={(url, blob) => {
+                                    setEditedImage(url);
+                                    setEditedImageBlob(blob);
+                                    setIsCanvasEditorOpen(false);
+                                }}
+                                onClose={() => setIsCanvasEditorOpen(false)}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     )
 }

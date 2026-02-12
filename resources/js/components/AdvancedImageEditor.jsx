@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect } from "react";
 
-export default function AdvancedImageEditor({ imageUrl, onSave }) {
+export default function AdvancedImageEditor({ imageUrl, onSave, autoOpen = false, showCloseButton = true, onClose = null }) {
     const canvasRef = useRef(null);
-    const [isEditing, setIsEditing] = useState(false);
+    const [isEditing, setIsEditing] = useState(autoOpen);
     const [tool, setTool] = useState("pen"); // pen, eraser, fill, colorPicker, brush
     const [penColor, setPenColor] = useState("#000000");
     const [penSize, setPenSize] = useState(2);
@@ -156,153 +156,167 @@ export default function AdvancedImageEditor({ imageUrl, onSave }) {
         );
     }
 
+    const editorContent = (
+        <div className="w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                {/* Canvas */}
+                <div className="lg:col-span-2">
+                    <label className="text-white text-sm font-medium mb-2 block">Canvas:</label>
+                    <div className="bg-white rounded-lg overflow-auto max-h-96 border border-[#616161]">
+                        <canvas
+                            ref={canvasRef}
+                            onMouseDown={startDrawing}
+                            onMouseMove={draw}
+                            onMouseUp={stopDrawing}
+                            onMouseLeave={stopDrawing}
+                            className="cursor-crosshair"
+                        />
+                    </div>
+                </div>
+
+                {/* Tools Panel */}
+                <div className="space-y-6 bg-[#1a1817] rounded-lg p-4">
+                    {/* Drawing Tools */}
+                    <div>
+                        <h4 className="text-white text-sm font-semibold mb-3">Drawing Tools</h4>
+                        <div className="space-y-2">
+                            {[
+                                { id: "pen", name: "✏️ Pen", icon: "pen" },
+                                { id: "brush", name: "🖌️ Brush", icon: "brush" },
+                                { id: "eraser", name: "🧹 Eraser", icon: "eraser" },
+                            ].map((t) => (
+                                <button
+                                    key={t.id}
+                                    onClick={() => setTool(t.id)}
+                                    className={`w-full text-left px-3 py-2 rounded text-sm font-medium transition ${
+                                        tool === t.id
+                                            ? "bg-[#6366f1] text-white"
+                                            : "bg-[#2F2E2E] text-[#D6D6D6] hover:bg-[#3F3E3E]"
+                                    }`}
+                                >
+                                    {t.name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Pen Properties */}
+                    <div>
+                        <h4 className="text-white text-sm font-semibold mb-3">Properties</h4>
+                        <div className="space-y-3">
+                            {tool !== "eraser" && (
+                                <div>
+                                    <label className="text-[#808080] text-xs block mb-2">Color:</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="color"
+                                            value={penColor}
+                                            onChange={(e) => setPenColor(e.target.value)}
+                                            className="w-12 h-8 rounded cursor-pointer border-2 border-[#616161]"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={penColor}
+                                            onChange={(e) => setPenColor(e.target.value)}
+                                            className="flex-1 bg-[#2F2E2E] text-white px-2 py-1 rounded border border-[#616161] text-xs"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="text-[#808080] text-xs block mb-2">
+                                    Size: <span className="text-white">{penSize}px</span>
+                                </label>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="50"
+                                    value={penSize}
+                                    onChange={(e) => setPenSize(parseInt(e.target.value))}
+                                    className="w-full h-2 bg-[#2F2E2E] rounded appearance-none cursor-pointer"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Adjustments */}
+                    <div>
+                        <h4 className="text-white text-sm font-semibold mb-3">Adjustments</h4>
+                        <div className="space-y-3">
+                            <div>
+                                <label className="text-[#808080] text-xs block mb-1">
+                                    Brightness: <span className="text-white">{brightness}</span>
+                                </label>
+                                <input
+                                    type="range"
+                                    min="-100"
+                                    max="100"
+                                    value={brightness}
+                                    onChange={(e) => setBrightness(parseInt(e.target.value))}
+                                    className="w-full h-2 bg-[#2F2E2E] rounded appearance-none cursor-pointer"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-[#808080] text-xs block mb-1">
+                                    Contrast: <span className="text-white">{contrast}</span>
+                                </label>
+                                <input
+                                    type="range"
+                                    min="-100"
+                                    max="100"
+                                    value={contrast}
+                                    onChange={(e) => setContrast(parseInt(e.target.value))}
+                                    className="w-full h-2 bg-[#2F2E2E] rounded appearance-none cursor-pointer"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+                <button
+                    onClick={resetImage}
+                    className="flex-1 bg-[#2F2E2E] hover:bg-[#3F3E3E] text-white px-4 py-3 rounded-lg text-sm font-medium"
+                >
+                    Reset
+                </button>
+                <button
+                    onClick={applyEdits}
+                    disabled={isProcessing}
+                    className="flex-1 bg-[#6366f1] hover:bg-[#4f46e5] disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg text-sm font-medium"
+                >
+                    {isProcessing ? "Processing..." : "Apply & Download"}
+                </button>
+                <button
+                    onClick={() => {
+                        setIsEditing(false);
+                        if (onClose) onClose();
+                    }}
+                    disabled={isProcessing}
+                    className="flex-1 bg-[#2F2E2E] hover:bg-[#3F3E3E] disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg text-sm font-medium"
+                >
+                    Cancel
+                </button>
+            </div>
+        </div>
+    );
+
+    // If autoOpen is true, render without modal wrapper (for use in external modals)
+    if (autoOpen) {
+        return editorContent;
+    }
+
+    // Otherwise, render with modal wrapper as before
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-[#171616] rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="p-6">
                     <h3 className="text-2xl text-white font-semibold mb-6">Advanced Image Editor</h3>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                        {/* Canvas */}
-                        <div className="lg:col-span-2">
-                            <label className="text-white text-sm font-medium mb-2 block">Canvas:</label>
-                            <div className="bg-white rounded-lg overflow-auto max-h-96 border border-[#616161]">
-                                <canvas
-                                    ref={canvasRef}
-                                    onMouseDown={startDrawing}
-                                    onMouseMove={draw}
-                                    onMouseUp={stopDrawing}
-                                    onMouseLeave={stopDrawing}
-                                    className="cursor-crosshair"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Tools Panel */}
-                        <div className="space-y-6 bg-[#1a1817] rounded-lg p-4">
-                            {/* Drawing Tools */}
-                            <div>
-                                <h4 className="text-white text-sm font-semibold mb-3">Drawing Tools</h4>
-                                <div className="space-y-2">
-                                    {[
-                                        { id: "pen", name: "✏️ Pen", icon: "pen" },
-                                        { id: "brush", name: "🖌️ Brush", icon: "brush" },
-                                        { id: "eraser", name: "🧹 Eraser", icon: "eraser" },
-                                    ].map((t) => (
-                                        <button
-                                            key={t.id}
-                                            onClick={() => setTool(t.id)}
-                                            className={`w-full text-left px-3 py-2 rounded text-sm font-medium transition ${
-                                                tool === t.id
-                                                    ? "bg-[#6366f1] text-white"
-                                                    : "bg-[#2F2E2E] text-[#D6D6D6] hover:bg-[#3F3E3E]"
-                                            }`}
-                                        >
-                                            {t.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Pen Properties */}
-                            <div>
-                                <h4 className="text-white text-sm font-semibold mb-3">Properties</h4>
-                                <div className="space-y-3">
-                                    {tool !== "eraser" && (
-                                        <div>
-                                            <label className="text-[#808080] text-xs block mb-2">Color:</label>
-                                            <div className="flex gap-2">
-                                                <input
-                                                    type="color"
-                                                    value={penColor}
-                                                    onChange={(e) => setPenColor(e.target.value)}
-                                                    className="w-12 h-8 rounded cursor-pointer border-2 border-[#616161]"
-                                                />
-                                                <input
-                                                    type="text"
-                                                    value={penColor}
-                                                    onChange={(e) => setPenColor(e.target.value)}
-                                                    className="flex-1 bg-[#2F2E2E] text-white px-2 py-1 rounded border border-[#616161] text-xs"
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div>
-                                        <label className="text-[#808080] text-xs block mb-2">
-                                            Size: <span className="text-white">{penSize}px</span>
-                                        </label>
-                                        <input
-                                            type="range"
-                                            min="1"
-                                            max="50"
-                                            value={penSize}
-                                            onChange={(e) => setPenSize(parseInt(e.target.value))}
-                                            className="w-full h-2 bg-[#2F2E2E] rounded appearance-none cursor-pointer"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Adjustments */}
-                            <div>
-                                <h4 className="text-white text-sm font-semibold mb-3">Adjustments</h4>
-                                <div className="space-y-3">
-                                    <div>
-                                        <label className="text-[#808080] text-xs block mb-1">
-                                            Brightness: <span className="text-white">{brightness}</span>
-                                        </label>
-                                        <input
-                                            type="range"
-                                            min="-100"
-                                            max="100"
-                                            value={brightness}
-                                            onChange={(e) => setBrightness(parseInt(e.target.value))}
-                                            className="w-full h-2 bg-[#2F2E2E] rounded appearance-none cursor-pointer"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="text-[#808080] text-xs block mb-1">
-                                            Contrast: <span className="text-white">{contrast}</span>
-                                        </label>
-                                        <input
-                                            type="range"
-                                            min="-100"
-                                            max="100"
-                                            value={contrast}
-                                            onChange={(e) => setContrast(parseInt(e.target.value))}
-                                            className="w-full h-2 bg-[#2F2E2E] rounded appearance-none cursor-pointer"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-3">
-                        <button
-                            onClick={resetImage}
-                            className="flex-1 bg-[#2F2E2E] hover:bg-[#3F3E3E] text-white px-4 py-3 rounded-lg text-sm font-medium"
-                        >
-                            Reset
-                        </button>
-                        <button
-                            onClick={applyEdits}
-                            disabled={isProcessing}
-                            className="flex-1 bg-[#6366f1] hover:bg-[#4f46e5] disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg text-sm font-medium"
-                        >
-                            {isProcessing ? "Processing..." : "Apply & Download"}
-                        </button>
-                        <button
-                            onClick={() => setIsEditing(false)}
-                            disabled={isProcessing}
-                            className="flex-1 bg-[#2F2E2E] hover:bg-[#3F3E3E] disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg text-sm font-medium"
-                        >
-                            Cancel
-                        </button>
-                    </div>
+                    {editorContent}
                 </div>
             </div>
         </div>
