@@ -9,9 +9,38 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
         return null;
     }
     
+    const [isEditing, setIsEditing] = useState(false);
+    
+    return (
+        <div>
+            <button
+                onClick={() => setIsEditing(true)}
+                className="w-full bg-[#6366f1] hover:bg-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19H4v-3L16.5 3.5z" />
+                </svg>
+                Full Editor
+            </button>
+            
+            {isEditing && (
+                <EditorModal 
+                    imageUrl={imageUrl} 
+                    onClose={() => setIsEditing(false)} 
+                    onSave={(url, blob) => {
+                        if (onSave) onSave(url, blob);
+                        setIsEditing(false);
+                    }}
+                />
+            )}
+        </div>
+    );
+}
+
+function EditorModal({ imageUrl, onClose, onSave }) {
     const canvasRef = useRef(null);
     const fabricCanvasRef = useRef(null);
-    const [isEditing, setIsEditing] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [tool, setTool] = useState("select");
@@ -30,7 +59,7 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
     useEffect(() => {
         let mounted = true;
         
-        if (isEditing && canvasRef.current && !fabricCanvasRef.current && mounted) {
+        if (canvasRef.current && !fabricCanvasRef.current && mounted) {
             console.log('Editor opened, initializing fabric canvas...');
             // Small delay to ensure DOM is ready
             setTimeout(() => {
@@ -42,22 +71,20 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
         
         // Handle Escape key to close modal
         const handleEscape = (e) => {
-            if (e.key === 'Escape' && isEditing) {
+            if (e.key === 'Escape') {
                 closeEditor();
             }
         };
         
-        if (isEditing) {
-            window.addEventListener('keydown', handleEscape);
-            document.body.style.overflow = 'hidden'; // Prevent background scrolling
-        }
+        window.addEventListener('keydown', handleEscape);
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
         
         return () => {
             mounted = false;
             window.removeEventListener('keydown', handleEscape);
             document.body.style.overflow = 'unset';
         };
-    }, [isEditing]);
+    }, []);
     
     // Cleanup on unmount
     useEffect(() => {
@@ -81,7 +108,7 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
         if (!canvasRef.current) {
             console.error('Canvas ref is null!');
             alert('Canvas element not found. Please try again.');
-            setIsEditing(false);
+            onClose();
             return;
         }
         
@@ -106,7 +133,7 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
             if (isError) {
                 console.error('Failed to load image:', imageUrl);
                 alert('Failed to load image for editing. Please check the image URL and try again.');
-                setIsEditing(false);
+                onClose();
                 setIsLoading(false);
                 return;
             }
@@ -114,7 +141,7 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
             if (!img || !img.width || !img.height) {
                 console.error('Invalid image loaded:', img);
                 alert('Invalid image. Please verify the image exists and is accessible.');
-                setIsEditing(false);
+                onClose();
                 setIsLoading(false);
                 return;
             }
@@ -147,7 +174,7 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
         } catch (error) {
             console.error('Error initializing fabric canvas:', error);
             alert('Error initializing canvas: ' + error.message);
-            setIsEditing(false);
+            onClose();
             setIsLoading(false);
         }
     };
@@ -379,7 +406,6 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
                         console.log('Calling onSave callback');
                         onSave(url, blob);
                     }
-                    setIsEditing(false);
                 })
                 .catch(err => {
                     console.error("Error converting to blob:", err);
@@ -404,36 +430,20 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
         } catch (error) {
             console.error('Error disposing canvas:', error);
         }
-        setIsEditing(false);
-        setIsLoading(false);
+        onClose();
     };
 
     // Always render both button and modal, toggle with CSS
     return (
-        <>
-            {/* Button - hidden when editing */}
-            <button
-                onClick={() => setIsEditing(true)}
-                className={`w-full bg-[#6366f1] hover:bg-[#4f46e5] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${isEditing ? 'hidden' : ''}`}
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19H4v-3L16.5 3.5z" />
-                </svg>
-                Full Editor
-            </button>
-
-            {/* Modal - hidden when not editing */}
-            {isEditing && (
-                <div 
-                    className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 overflow-y-auto" 
-                    style={{ zIndex: 9999 }}
-                    onClick={(e) => {
-                        if (e.target === e.currentTarget) {
-                            closeEditor();
-                        }
-                    }}
-                >
+        <div 
+            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 overflow-y-auto" 
+            style={{ zIndex: 9999 }}
+            onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                    closeEditor();
+                }
+            }}
+        >
             <div className="bg-[#171616] rounded-2xl max-w-6xl w-full my-4 relative">
                 {/* Header with close button */}
                 <div className="p-4 sm:p-6 border-b border-[#2F2E2E]">
@@ -651,7 +661,5 @@ export default function FabricImageEditor({ imageUrl, onSave }) {
                 </div>
             </div>
         </div>
-            )}
-        </>
     );
 }
